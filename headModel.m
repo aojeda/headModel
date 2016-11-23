@@ -471,7 +471,7 @@ classdef headModel < handle
             c2 = onCleanup(@()delete(headModelConductivity));
             
             dipolesFile = fullfile(rootDir,[rname '_dipoles.txt']);
-            normalsIn = false;
+            normalsIn = true;
             [normals,obj.cortex.faces] = gTools.getSurfaceNormals(obj.cortex.vertices,obj.cortex.faces,normalsIn);
             
             normalityConstrained = ~orientation;
