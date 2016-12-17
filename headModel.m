@@ -73,9 +73,13 @@ classdef headModel < handle
             % It colors different regions of the cortical surface according to a defined
             % anatomical atlas. Several interactive options for customizing the figure are
             % available.
-            if isempty(obj.channelSpace) || isempty(obj.labels) || isempty(obj.scalp) || ...
-                    isempty(obj.outskull) || isempty(obj.inskull) || isempty(obj.cortex)
-                error('Head model is incomplete.');
+            if isempty(obj.channelSpace) || isempty(obj.labels)
+                error('Channel positions and labels may be missing.');
+            end
+            if isempty(obj.scalp) || isempty(obj.outskull) || isempty(obj.inskull) || isempty(obj.cortex)
+                warning('Head model is incomplete.');
+                obj.plotMontage();
+                return;
             end
             h = headModelViewerHandle(obj);
         end
@@ -161,23 +165,26 @@ classdef headModel < handle
             grid on;
         end
         %%
-        function warpedTemplateObj = warpTemplate(obj,templateObj)
-            % Warps a template head model to the space defined by the sensor positions (channelSpace) using Dirk-Jan Kroon's
-            % nonrigid_version23 toolbox.
+        function warpTemplate(obj,templateObj, regType)
+            % Warps a template head model to the space defined by the sensor positions (channelSpace) 
+            % using Dirk-Jan Kroon's nonrigid_version23 toolbox.
             %
             % For more details see: http://www.mathworks.com/matlabcentral/fileexchange/20057-b-spline-grid-image-and-point-based-registration
             % 
             % Input arguments:
-            %       templateObj:             head model object that will be warped
-            %
-            % Output arguments:
-            %       warpedSourceObj: warped head model
+            %       templateObj:     head model object that will be warped
+            %       regType:         co-registration type, could be 'affine' or 'bspline'. In case
+            %                        of 'affine' only the affine mapping is estimated (rotation,
+            %                        traslation, and scaling). 'bspline' starts from the affine 
+            %                        mapping and goes on to estimate a non-linear defformation
+            %                        field that captures better the shape of the head.
             %
             % References: 
             %    D. Rueckert et al. "Nonrigid Registration Using Free-Form Deformations: Application to Breast MR Images".
             %    Seungyong Lee, George Wolberg, and Sung Yong Shing, "Scattered Data interpolation with Multilevel B-splines"
 
             if nargin < 2, error('Reference head model is missing.');end
+            if nargin < 3, regType = 'bspline';end
             if isempty(obj.channelSpace) || isempty(obj.labels), error('"channelSpace" or "labels" are missing.');end
             
             gTools = geometricTools;
@@ -227,194 +234,45 @@ classdef headModel < handle
                 end
             catch
                 disp('Fiducials are missing in the individual head model, selecting the common set of points based on the channel labels.')
-                [~,loc1,loc2] = intersect(obj.labels,templateObj.labels,'stable');
+                [~,loc1,loc2] = intersect(lower(obj.labels),lower(templateObj.labels),'stable');
                 T = obj.channelSpace(loc1,:);
                 S = templateObj.channelSpace(loc2,:);
             end
+            
+            obj.scalp    = templateObj.scalp;
+            obj.outskull = templateObj.outskull;
+            obj.inskull  = templateObj.inskull;
+            obj.cortex   = templateObj.cortex;
+            obj.K        = []; 
+            obj.L        = templateObj.L;
+            obj.atlas    = templateObj.atlas;
                         
             % Affine co-registration
-            [Aff,~,scale] = gTools.affineMapping(S,T);
+            Aff = gTools.affineMapping(S,T);
             
             % Affine warping
-            surfData = [templateObj.scalp;templateObj.outskull;templateObj.inskull;templateObj.cortex];
-            Ns = length(surfData);
-            for it=1:Ns
-                surfData(it).vertices = gTools.applyAffineMapping(surfData(it).vertices,Aff);
-            end
-            warpedChannelSpace = gTools.applyAffineMapping(templateObj.channelSpace,Aff);
-            
+            obj.scalp.vertices    = gTools.applyAffineMapping(templateObj.scalp.vertices,Aff);
+            obj.outskull.vertices = gTools.applyAffineMapping(templateObj.outskull.vertices,Aff);
+            obj.inskull.vertices  = gTools.applyAffineMapping(templateObj.inskull.vertices,Aff);
+            obj.cortex.vertices   = gTools.applyAffineMapping(templateObj.cortex.vertices,Aff);
+                        
             % b-spline co-registration (only fiducial landmarks)
-            options.Verbose = true;
-            options.MaxRef = 2;
-            Saff = gTools.applyAffineMapping(S,Aff);
-            [Def,spacing,offset] = gTools.bSplineMapping(Saff,T,surfData(1).vertices,options);
-            
-            % b-spline co-registration (second pass)
-            for it=1:Ns
-                surfData(it).vertices = gTools.applyBSplineMapping(Def,spacing,offset,surfData(it).vertices);
-            end
-            T = obj.channelSpace;
-            T(T(:,3) <= min(surfData(1).vertices(:,3)),:) = [];
-            [T,d] = gTools.nearestNeighbor(S,T);
-            z = zscore(d);
-            S(abs(z)>th,:) = [];
-            T(abs(z)>th,:) = [];
-            [Def,spacing,offset] = gTools.bSplineMapping(S,T,surfData(1).vertices,options);
-            
-            % b-spline co-registration (third pass)
-            for it=1:Ns
-                surfData(it).vertices = gTools.applyBSplineMapping(Def,spacing,offset,surfData(it).vertices);
-            end
-            T = obj.channelSpace;
-            T(T(:,3) <= min(surfData(1).vertices(:,3)),:) = [];
-            [T,d] = gTools.nearestNeighbor(S,T);
-            z = zscore(d);
-            S(abs(z)>th,:) = [];
-            T(abs(z)>th,:) = [];
-            Tm = 0.5*(T+S);
-            [Def,spacing,offset] = gTools.bSplineMapping(S,Tm,surfData(1).vertices,options);
-            
-            % apply the final transformation
-            for it=1:Ns
-                surfData(it).vertices = gTools.applyBSplineMapping(Def,spacing,offset,surfData(it).vertices);
-                surfData(it).vertices = gTools.smoothSurface(surfData(it).vertices,surfData(it).faces);
-            end
-            warpedTemplateObj = headModel({'channelSpace',warpedChannelSpace,'labels',templateObj.labels,...
-                'K',[],'L',templateObj.L,'atlas',templateObj.atlas,'scalp',surfData(1),'outskull',...
-                surfData(2),'inskull',surfData(3),'cortex',surfData(4)});
-            disp('Done!')
-        end
-        %%
-        function Aff = warpToTemplate(obj,templateObj,regType)
-            % Estimates a mapping from this head to a template's head.
-            % It uses Dirk-Jan Kroon's nonrigid_version23 toolbox.
-            %
-            % For more details see: http://www.mathworks.com/matlabcentral/fileexchange/20057-b-spline-grid-image-and-point-based-registration
-            %
-            % Input arguments:
-            %       templateObj:             Template head model.
-            %       regType:                 co-registration type, could be 'affine' or 'bspline'. In case
-            %                                of 'affine' only the affine mapping is estimated (rotation,
-            %                                traslation, and scaling). 'bspline' starts from the affine 
-            %                                mapping and goes on to estimate a non-linear defformation
-            %                                field that captures better the shape of the head.
-            %
-            % Output arguments:
-            %       Aff: affine matrix
-            %
-            % References: 
-            %    D. Rueckert et al. "Nonrigid Registration Using Free-Form Deformations: Application to Breast MR Images".
-            %    Seungyong Lee, George Wolberg, and Sung Yong Shing, "Scattered Data interpolation with Multilevel B-splines"
-
-            if nargin < 2, error('Reference head model is missing.');end
-            if nargin < 3, regType = 'bspline';end
-            if isempty(obj.channelSpace) || isempty(obj.labels), error('"channelSpace" or "labels" are missing.');end
-            
-            gTools = geometricTools;
-            th = norminv(0.90);
-            % mapping source to target spaces: S->T
-            % target space: template
-            
-            try
-                T = [templateObj.fiducials.nasion;...
-                    templateObj.fiducials.lpa;...
-                    templateObj.fiducials.rpa;...
-                    templateObj.fiducials.vertex];
-                
-                % source space: individual geometry
-                S = [obj.fiducials.nasion;...
-                    obj.fiducials.lpa;...
-                    obj.fiducials.rpa];
-                
-                % estimates vertex if is missing
-                if isfield(obj.fiducials,'vertex')
-                    if numel(obj.fiducials.vertex) == 3
-                        S = [S;obj.fiducials.vertex];
-                    else
-                        point = 0.5*(obj.fiducials.lpa + obj.fiducials.rpa);
-                        point = ones(50,1)*point;
-                        point(:,3) = linspace(point(3),1.5*max(obj.channelSpace(:,3)),50)';
-                        [~,d] = gTools.nearestNeighbor(obj.channelSpace,point);
-                        [~,loc] = min(d);
-                        point = point(loc,:);
-                        S = [S;point];
-                    end
-                else
-                    point = 0.5*(obj.fiducials.lpa + obj.fiducials.rpa);
-                    point = ones(50,1)*point;
-                    point(:,3) = linspace(point(3),1.5*max(obj.channelSpace(:,3)),50)';
-                    [~,d] = gTools.nearestNeighbor(obj.channelSpace,point);
-                    [~,loc] = min(d);
-                    point = point(loc,:);
-                    S = [S;point];
-                end
-                
-                if isfield(obj.fiducials,'inion')
-                    if numel(obj.fiducials.vertex) == 3
-                        S = [S;obj.fiducials.inion];
-                        T = [T;templateObj.fiducials.inion];
-                    end
-                end
-            catch
-                disp('Fiducials are missing in the individual head model, selecting the common set of points based on the channel labels.')
-                [~,loc1,loc2] = intersect(lower(obj.labels),lower(templateObj.labels),'stable');
-                S = obj.channelSpace(loc1,:);
-                T = templateObj.channelSpace(loc2,:);
-            end
-            if isa(obj,'eeg')
-                obj.initStatusbar(1,8,'Co-registering...');
-            else
-                disp('Co-registering...');
-            end
-            
-            % affine co-registration
-            Aff = gTools.affineMapping(S,T);
-            if isa(obj,'eeg'), obj.statusbar(1);end
-            
-            obj.channelSpace = gTools.applyAffineMapping(obj.channelSpace,Aff);
-            if ~isempty(obj.fiducials)
-                obj.fiducials.lpa = gTools.applyAffineMapping(obj.fiducials.lpa,Aff);
-                obj.fiducials.rpa = gTools.applyAffineMapping(obj.fiducials.rpa,Aff);
-                obj.fiducials.nasion = gTools.applyAffineMapping(obj.fiducials.nasion,Aff);
-            end
-            if ~strcmp(regType,'affine')
-                % b-spline co-registration (coarse warping)
+            if strcmp(regType,'bspline')
                 options.Verbose = true;
                 options.MaxRef = 2;
                 Saff = gTools.applyAffineMapping(S,Aff);
-                [Def,spacing,offset] = gTools.bSplineMapping(Saff,T,obj.channelSpace,options);
-                if isa(obj,'eeg'), obj.statusbar(2);end
-                obj.channelSpace = gTools.applyBSplineMapping(Def,spacing,offset,obj.channelSpace);
-                if ~isempty(obj.fiducials)
-                    obj.fiducials.lpa = gTools.applyBSplineMapping(Def,spacing,offset,obj.fiducials.lpa);
-                    obj.fiducials.rpa = gTools.applyBSplineMapping(Def,spacing,offset,obj.fiducials.rpa);
-                    obj.fiducials.nasion = gTools.applyBSplineMapping(Def,spacing,offset,obj.fiducials.nasion);
-                end
+                [Def,spacing,offset] = gTools.bSplineMapping(Saff,T,obj.scalp.vertices,options);
                 
-                % b-spline co-registration (detailed warping)
-                for it=1:3
-                    T = templateObj.scalp.vertices;
-                    S = obj.channelSpace;
-                    S(S(:,3) <= min(T(:,3)),:) = [];
-                    [T,d] = gTools.nearestNeighbor(S,T);
-                    z = zscore(d);
-                    S(abs(z)>th,:) = [];
-                    T(abs(z)>th,:) = [];
-                    [Def,spacing,offset] = gTools.bSplineMapping(S,T,obj.channelSpace,options);
-                    obj.channelSpace = gTools.applyBSplineMapping(Def,spacing,offset,obj.channelSpace);
-                    if ~isempty(obj.fiducials)
-                        obj.fiducials.lpa = gTools.applyBSplineMapping(Def,spacing,offset,obj.fiducials.lpa);
-                        obj.fiducials.rpa = gTools.applyBSplineMapping(Def,spacing,offset,obj.fiducials.rpa);
-                        obj.fiducials.nasion = gTools.applyBSplineMapping(Def,spacing,offset,obj.fiducials.nasion);
-                    end
-                    if ~isempty(obj.outskull)
-                        obj.scalp.vertices = gTools.applyBSplineMapping(Def,spacing,offset,obj.scalp.vertices);
-                        obj.outskull.vertices = gTools.applyBSplineMapping(Def,spacing,offset,obj.outskull.vertices);
-                        obj.inskull.vertices = gTools.applyBSplineMapping(Def,spacing,offset,obj.inskull.vertices);
-                        obj.cortex.vertices = gTools.applyBSplineMapping(Def,spacing,offset,obj.cortex.vertices);
-                    end
-                end
+                % b-spline co-registration (second pass)
+                obj.scalp.vertices    = gTools.applyBSplineMapping(Def,spacing,offset,obj.scalp.vertices);
+                obj.outskull.vertices = gTools.applyBSplineMapping(Def,spacing,offset,obj.outskull.vertices);
+                obj.inskull.vertices  = gTools.applyBSplineMapping(Def,spacing,offset,obj.inskull.vertices);
+                obj.cortex.vertices   = gTools.applyBSplineMapping(Def,spacing,offset,obj.cortex.vertices);
+                
+                % Project sensors to the scalp (in case they are not already exactly on the scalp)
+                obj.channelSpace = gTools.nearestNeighbor(obj.channelSpace,obj.scalp.vertices);
             end
+            disp('Done!')
         end
         %%
         function computeLeadFieldBEM(obj, conductivity,orientation)
@@ -471,7 +329,7 @@ classdef headModel < handle
             c2 = onCleanup(@()delete(headModelConductivity));
             
             dipolesFile = fullfile(rootDir,[rname '_dipoles.txt']);
-            normalsIn = true;
+            normalsIn = false;
             [normals,obj.cortex.faces] = gTools.getSurfaceNormals(obj.cortex.vertices,obj.cortex.faces,normalsIn);
             
             normalityConstrained = ~orientation;
@@ -489,7 +347,7 @@ classdef headModel < handle
             dlmwrite(electrodesFile, obj.channelSpace, 'precision', 6,'delimiter',' ')
             c4 = onCleanup(@()delete(electrodesFile));
             
-            normalsIn = true;
+            normalsIn = false;
             brain = fullfile(rootDir,'brain.tri');
             [normals,obj.inskull.faces] = gTools.getSurfaceNormals(obj.inskull.vertices,obj.inskull.faces,normalsIn);
             om_save_tri(brain,obj.inskull.vertices,obj.inskull.faces,normals)
@@ -546,100 +404,6 @@ classdef headModel < handle
             disp('Done.')
         end
         %%
-        function [Ht,K,L,ind] = svd4KalmanFilter(obj, structName, rmIndices,model_order)
-            if nargin < 2
-                structName = {'Thalamus_L' 'Thalamus_R'};
-                disp('Undefined structure to remove. Opening the surface by the Thalamus.')
-            end
-            if nargin < 3, rmIndices = [];end
-            [~, ~,~, K,ind,~,L] = svd4sourceLoc(obj, structName, rmIndices);
-            [Nch,Ns] = size(K);
-            Ht = [K/L zeros(Nch,(model_order-1)*Ns)];
-        end
-        function [Ut, s2,iLV, Kstd,ind,K,L] = svd4sourceLoc(obj, structName, rmIndices)
-            if nargin < 2
-                structName = {'Thalamus_L' 'Thalamus_R'};
-                disp('Undefined structure to remove. Opening the surface by the Thalamus.')
-            end
-            if nargin < 3, rmIndices = [];end
-            [~,K,L,rmIndices] = getSourceSpace4PEB(obj,structName, rmIndices);
-            Ns = size(obj.cortex.vertices,1);
-            ind = setdiff(1:Ns,rmIndices);
-            Ny = size(obj.K,1);
-            H = eye(Ny)-ones(Ny)/Ny;
-            K = H*K;
-            Kstd = bsxfun(@rdivide,K,std(K,[],1)+eps);
-            [U,S,V] = svd(Kstd/L,'econ');
-            Ut = U';
-            iLV = L\V;
-            s2 = diag(S).^2;
-        end
-        %%
-        function [Ut, s2,iHsqrtV, Klb, B, Hsqrt] = svd4sourceLocLB(obj,numberOfBasis)
-            persistent P
-            if nargin < 2, numberOfBasis = 128;end
-            if isempty(obj.K)
-                error('Need to compute leead field matrix first!');
-            end
-            K = obj.K;
-            L = obj.L;
-            %--
-            if isempty(P) || size(P,2) ~= numberOfBasis+2
-                [A,C] = FEM(obj.cortex);
-                [P,~] = eigs(C,A,numberOfBasis+10,'sm');
-            end
-            B = -P(:,1:numberOfBasis);
-            %--
-            LtL = sqrtm(full(L'*L));
-            H = B'*LtL*B;
-            H = sqrtm(full(H*H'));
-            Hsqrt = chol(H);
-            %--
-            Kstd = bsxfun(@rdivide,K,std(K,[],1)+eps);
-            Klb = Kstd*B;
-            [U,S,V] = svd(Klb/Hsqrt,'econ');
-            Ut = U';
-            iHsqrtV = Hsqrt\V;
-            s = diag(S);
-            s2 = s.^2;
-        end
-        %%
-        function [sourceSpace,K,L,rmIndices] = getSourceSpace4PEB(obj,structName, rmIndices)
-            if nargin < 2
-                structName = {'Thalamus_L' 'Thalamus_R'};
-                disp('Undefined structure to remove. Opening the surface by the Thalamus.')
-            end
-            if nargin < 3, rmIndices = [];end
-            if isempty(obj.K)
-                error('Need to compute leead field matrix first!');
-            end
-            K = obj.K;
-            L = obj.L;
-            maxNumVertices2rm = 10;
-            sourceSpace = obj.cortex;
-            try
-                [sourceSpace,rmIndices] = obj.removeStructureFromSourceSpace(structName,maxNumVertices2rm, rmIndices);
-            catch ME
-                warning(ME.message);
-                disp('Doing my best to open the surface.')
-                n = size(sourceSpace.vertices,1);
-                rmIndices = fix(n/2)-maxNumVertices2rm/2:fix(n/2)+maxNumVertices2rm/2;
-                [sourceSpace.vertices, sourceSpace.faces] = geometricTools.openSurface(sourceSpace.vertices,sourceSpace.faces,rmIndices);
-            end
-            dim = size(K);
-            L(rmIndices,:) = [];
-            L(:,rmIndices) = [];
-            if dim(2)/3 == size(obj.cortex.vertices,1)
-                K = reshape(K,[dim(1) dim(2)/3 3]);
-                K(:,rmIndices,:) = [];
-                % K = permute(K,[1 3 2]);
-                K = reshape(K,[dim(1) (dim(2)/3-length(rmIndices))*3]);
-                L = kron(eye(3),L);
-            else
-                K(:,rmIndices) = [];
-            end
-        end
-       %%
         function indices = indices4Structure(obj,structName)
             if nargin < 2, error('Not enough input arguments.');end
             if iscellstr(structName)
@@ -813,311 +577,6 @@ classdef headModel < handle
         function h = plotHeadModel(obj)
             h = plot(obj);
             warning('This method hass been deprecated, instead you can use "plot".')
-        end
-        function individualHeadModelFile = warpTemplate2channelSpace(obj,headModelFile,individualHeadModelFile)
-            % Warps a template head model to the space defined by the sensor positions (channelSpace). It uses Dirk-Jan Kroon's
-            % nonrigid_version23 toolbox.
-            %
-            % For more details see: http://www.mathworks.com/matlabcentral/fileexchange/20057-b-spline-grid-image-and-point-based-registration
-            % 
-            % Input arguments:
-            %       headModelFile:           pointer to the template head model file. To see an example of
-            %                                templates see the folder mobilab/data/headModelXX.mat
-            %       individualHeadModelFile: pointer to the warped head model (output file)
-            % 
-            % Output arguments:
-            %       individualHeadModelFile: pointer to the warped head model (same as the second input argument)
-            %
-            % References: 
-            %    D. Rueckert et al. "Nonrigid Registration Using Free-Form Deformations: Application to Breast MR Images".
-            %    Seungyong Lee, George Wolberg, and Sung Yong Shing, "Scattered Data interpolation with Multilevel B-splines"
-
-            if nargin < 2, error('Reference head model is missing.');end
-            if nargin < 3, individualHeadModelFile = [tempname '.mat'];end
-            if isempty(obj.channelSpace) || isempty(obj.label), error('Channel space or labels are missing.');end
-            if ~exist(headModelFile,'file'), error('The file you''ve entered does not exist.');end
-            
-            warning('This method hass been deprecated, instead you can use "warpTemplate".')
-            template = load(headModelFile);
-            if isfield(template,'metadata')
-                tmp = headModel.loadFromFile(headModelFile);
-                template = template.metadata;
-                load(tmp.surfaces)
-                template.surfData = surfData;
-            end
-            gTools = geometricTools;
-            th = norminv(0.90);
-            % mapping source to target spaces: S->T
-            % target space: individual geometry
-            
-            try
-                T = [obj.fiducials.nasion;...
-                    obj.fiducials.lpa;...
-                    obj.fiducials.rpa];
-                
-                % source space: template
-                S = [template.fiducials.nasion;...
-                    template.fiducials.lpa;...
-                    template.fiducials.rpa;...
-                    template.fiducials.vertex];
-                
-                % estimates vertex if is missing
-                if isfield(obj.fiducials,'vertex')
-                    if numel(obj.fiducials.vertex) == 3
-                        T = [T;obj.fiducials.vertex];
-                    else
-                        point = 0.5*(obj.fiducials.lpa + obj.fiducials.rpa);
-                        point = ones(50,1)*point;
-                        point(:,3) = linspace(point(3),1.5*max(obj.channelSpace(:,3)),50)';
-                        [~,d] = gTools.nearestNeighbor(obj.channelSpace,point);
-                        [~,loc] = min(d);
-                        point = point(loc,:);
-                        T = [T;point];
-                    end
-                else
-                    point = 0.5*(obj.fiducials.lpa + obj.fiducials.rpa);
-                    point = ones(50,1)*point;
-                    point(:,3) = linspace(point(3),1.5*max(obj.channelSpace(:,3)),50)';
-                    [~,d] = gTools.nearestNeighbor(obj.channelSpace,point);
-                    [~,loc] = min(d);
-                    point = point(loc,:);
-                    T = [T;point];
-                end
-                
-                if isfield(obj.fiducials,'inion')
-                    if numel(obj.fiducials.vertex) == 3
-                        T = [T;obj.fiducials.inion];
-                        S = [S;template.fiducials.inion];
-                    end
-                end
-            catch
-                disp('Fiducials are missing in the individual head model, selecting the common set of points based on the channel labels.')
-                [~,loc1,loc2] = intersect(obj.getChannelLabels,template.label,'stable');
-                T = obj.channelSpace(loc1,:);
-                S = template.channelSpace(loc2,:);
-            end
-            try obj.initStatusbar(1,8,'Co-registering...');end %#ok
-            
-            % affine co-registration
-            [Aff,~,scale] = gTools.affineMapping(S,T);
-            if isa(obj,'eeg'), obj.statusbar(1);end
-            
-            % b-spline co-registration (only fiducial landmarks)
-            options.Verbose = true;
-            options.MaxRef = 2;
-            surfData = template.surfData;
-            Ns = length(surfData);
-            for it=1:Ns
-                surfData(it).vertices = gTools.applyAffineMapping(template.surfData(it).vertices,Aff);
-            end
-            Saff = gTools.applyAffineMapping(S,Aff);
-            [Def,spacing,offset] = gTools.bSplineMapping(Saff,T,surfData(1).vertices,options);
-            try obj.statusbar(2);end %#ok
-            
-            % b-spline co-registration (second pass)
-            for it=1:Ns
-                surfData(it).vertices = gTools.applyBSplineMapping(Def,spacing,offset,surfData(it).vertices);
-            end
-            T = obj.channelSpace;
-            T(T(:,3) <= min(surfData(1).vertices(:,3)),:) = [];
-            [S,d] = gTools.nearestNeighbor(surfData(1).vertices,T);
-            z = zscore(d);
-            S(abs(z)>th,:) = [];
-            T(abs(z)>th,:) = [];
-            [Def,spacing,offset] = gTools.bSplineMapping(S,T,surfData(1).vertices,options);
-            try obj.statusbar(3);end %#ok
-            
-            % b-spline co-registration (third pass)
-            for it=1:Ns
-                surfData(it).vertices = gTools.applyBSplineMapping(Def,spacing,offset,surfData(it).vertices);
-            end
-            T = obj.channelSpace;
-            T(T(:,3) <= min(surfData(1).vertices(:,3)),:) = [];
-            [S,d] = gTools.nearestNeighbor(surfData(1).vertices,T);
-            z = zscore(d);
-            S(abs(z)>th,:) = [];
-            T(abs(z)>th,:) = [];
-            Tm = 0.5*(T+S);
-            [Def,spacing,offset] = gTools.bSplineMapping(S,Tm,surfData(1).vertices,options);
-            try obj.statusbar(4);end %#ok
-            
-            % apply the final transformation
-            for it=1:Ns
-                surfData(it).vertices = gTools.applyBSplineMapping(Def,spacing,offset,surfData(it).vertices);
-                surfData(it).vertices = gTools.smoothSurface(surfData(it).vertices,surfData(it).faces);
-            end
-           
-            ind =  obj.channelSpace(:,3) > min(surfData(1).vertices(:,3));
-            T = gTools.nearestNeighbor(surfData(1).vertices,obj.channelSpace);
-            channelSpace = obj.channelSpace; %#ok
-            channelSpace(ind,:) = T(ind,:);  %#ok
-            [~,loc] = unique(channelSpace,'rows');%#ok
-            indInterp = setdiff(1:size(obj.channelSpace,1),loc);
-            if ~isempty(indInterp)
-                x = setdiff(channelSpace,channelSpace(indInterp,:),'rows');%#ok
-                xi = gTools.nearestNeighbor(x,channelSpace(indInterp,:));%#ok
-                channelSpace(indInterp,:) = 0.5*(xi + channelSpace(indInterp,:));%#ok
-            end
-            obj.channelSpace = channelSpace; %#ok
-            
-            if isfield(template,'atlas'), 
-                if isfield(template.atlas,'color')
-                    colorTable = template.atlas.color;
-                    template.atlas = rmfield(template.atlas,'color');
-                    template.atlas.colorTable = colorTable;
-                end
-                obj.atlas = template.atlas;
-            end
-            if exist(obj.surfaces,'file'), delete(obj.surfaces);end
-            obj.surfaces = individualHeadModelFile;
-            save(obj.surfaces,'surfData');
-            try obj.statusbar(8);end %#ok
-            disp('Done!')
-        end
-        function Aff = warpChannelSpace2Template(obj,headModelFile,individualHeadModelFile,regType)
-            % Estimates a mapping from channel space to a template's head. It uses Dirk-Jan Kroon's
-            % nonrigid_version23 toolbox.
-            %
-            % For more details see: http://www.mathworks.com/matlabcentral/fileexchange/20057-b-spline-grid-image-and-point-based-registration
-            %
-            % Input arguments:
-            %       headModelFile:           pointer to the template head model file. To see an example
-            %                                of templates see the folder mobilab/data/headModelXX.mat
-            %       individualHeadModelFile: pointer to the warped head model (output file)
-            %       regType:                 co-registration type, could be 'affine' or 'bspline'. In case
-            %                                of 'affine' only the affine mapping is estimated (rotation,
-            %                                traslation, and scaling). 'bspline' starts from the affine 
-            %                                mapping and goes on to estimate a non-linear defformation
-            %                                field that captures better the shape of the head.
-            %
-            % Output arguments:
-            %       Aff: affine matrix
-            %
-            % References: 
-            %    D. Rueckert et al. "Nonrigid Registration Using Free-Form Deformations: Application to Breast MR Images".
-            %    Seungyong Lee, George Wolberg, and Sung Yong Shing, "Scattered Data interpolation with Multilevel B-splines"
-
-            if nargin < 2, error('Reference head model is missing.');end
-            if nargin < 3, individualHeadModelFile = ['surfaces_' num2str(round(1e5*rand)) '.mat'];end
-            if nargin < 4, regType = 'bspline';end
-            if isempty(obj.channelSpace) || isempty(obj.label), error('Channel space or labels are missing.');end
-            if ~exist(headModelFile,'file'), error('The file you''ve entered does not exist.');end
-            
-            warning('This method hass been deprecated, instead you can use "warpToTemplate".')
-            template = load(headModelFile);
-            if isfield(template,'metadata')
-                tmp = headModel.loadFromFile(headModelFile);
-                template = template.metadata;
-                load(tmp.surfaces)
-                template.surfData = surfData;
-            end
-            surfData = template.surfData;
-            gTools = geometricTools;
-            th = norminv(0.90);
-            % mapping source to target spaces: S->T
-            % target space: template
-            
-            try
-                T = [template.fiducials.nasion;...
-                    template.fiducials.lpa;...
-                    template.fiducials.rpa;...
-                    template.fiducials.vertex];
-                
-                % source space: individual geometry
-                S = [obj.fiducials.nasion;...
-                    obj.fiducials.lpa;...
-                    obj.fiducials.rpa];
-                
-                % estimates vertex if is missing
-                if isfield(obj.fiducials,'vertex')
-                    if numel(obj.fiducials.vertex) == 3
-                        S = [S;obj.fiducials.vertex];
-                    else
-                        point = 0.5*(obj.fiducials.lpa + obj.fiducials.rpa);
-                        point = ones(50,1)*point;
-                        point(:,3) = linspace(point(3),1.5*max(obj.channelSpace(:,3)),50)';
-                        [~,d] = gTools.nearestNeighbor(obj.channelSpace,point);
-                        [~,loc] = min(d);
-                        point = point(loc,:);
-                        S = [S;point];
-                    end
-                else
-                    point = 0.5*(obj.fiducials.lpa + obj.fiducials.rpa);
-                    point = ones(50,1)*point;
-                    point(:,3) = linspace(point(3),1.5*max(obj.channelSpace(:,3)),50)';
-                    [~,d] = gTools.nearestNeighbor(obj.channelSpace,point);
-                    [~,loc] = min(d);
-                    point = point(loc,:);
-                    S = [S;point];
-                end
-                
-                if isfield(obj.fiducials,'inion')
-                    if numel(obj.fiducials.vertex) == 3
-                        S = [S;obj.fiducials.inion];
-                        T = [T;template.fiducials.inion];
-                    end
-                end
-            catch
-                disp('Fiducials are missing in the individual head model, selecting the common set of points based on the channel labels.')
-                [~,loc1,loc2] = intersect(obj.getChannelLabels,template.label,'stable');
-                S = obj.channelSpace(loc1,:);
-                T = template.channelSpace(loc2,:);
-            end
-            if isa(obj,'eeg')
-                obj.initStatusbar(1,8,'Co-registering...');
-            else
-                disp('Co-registering...');
-            end
-            
-            % affine co-registration
-            Aff = gTools.affineMapping(S,T);
-            if isa(obj,'eeg'), obj.statusbar(1);end
-            
-            obj.channelSpace = gTools.applyAffineMapping(obj.channelSpace,Aff);
-            if ~isempty(obj.fiducials)
-                obj.fiducials.lpa = gTools.applyAffineMapping(obj.fiducials.lpa,Aff);
-                obj.fiducials.rpa = gTools.applyAffineMapping(obj.fiducials.rpa,Aff);
-                obj.fiducials.nasion = gTools.applyAffineMapping(obj.fiducials.nasion,Aff);
-            end
-            if ~strcmp(regType,'affine')
-                % b-spline co-registration (coarse warping)
-                options.Verbose = true;
-                options.MaxRef = 2;
-                Saff = gTools.applyAffineMapping(S,Aff);
-                [Def,spacing,offset] = gTools.bSplineMapping(Saff,T,obj.channelSpace,options);
-                if isa(obj,'eeg'), obj.statusbar(2);end
-                obj.channelSpace = gTools.applyBSplineMapping(Def,spacing,offset,obj.channelSpace);
-                if ~isempty(obj.fiducials)
-                    obj.fiducials.lpa = gTools.applyBSplineMapping(Def,spacing,offset,obj.fiducials.lpa);
-                    obj.fiducials.rpa = gTools.applyBSplineMapping(Def,spacing,offset,obj.fiducials.rpa);
-                    obj.fiducials.nasion = gTools.applyBSplineMapping(Def,spacing,offset,obj.fiducials.nasion);
-                end
-                
-                % b-spline co-registration (detailed warping)
-                Npass = 4;
-                for it=2:Npass
-                    T = template.surfData(1).vertices;
-                    S = obj.channelSpace;
-                    S(S(:,3) <= min(T(:,3)),:) = [];
-                    [T,d] = gTools.nearestNeighbor(T,S);
-                    z = zscore(d);
-                    S(abs(z)>th,:) = [];
-                    T(abs(z)>th,:) = [];
-                    [Def,spacing,offset] = gTools.bSplineMapping(S,T,obj.channelSpace,options);
-                    if isa(obj,'eeg'), obj.statusbar(it);end
-                    obj.channelSpace = gTools.applyBSplineMapping(Def,spacing,offset,obj.channelSpace);
-                    if ~isempty(obj.fiducials)
-                        obj.fiducials.lpa = gTools.applyBSplineMapping(Def,spacing,offset,obj.fiducials.lpa);
-                        obj.fiducials.rpa = gTools.applyBSplineMapping(Def,spacing,offset,obj.fiducials.rpa);
-                        obj.fiducials.nasion = gTools.applyBSplineMapping(Def,spacing,offset,obj.fiducials.nasion);
-                    end
-                end
-            end
-            if isfield(template,'atlas'), obj.atlas = template.atlas;end
-            if exist(obj.surfaces,'file'), delete(obj.surfaces);end
-            obj.surfaces = individualHeadModelFile;
-            save(obj.surfaces,'surfData');
-            if isa(obj,'eeg'), obj.statusbar(8);end
         end
     end
     %%

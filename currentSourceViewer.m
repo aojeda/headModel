@@ -35,6 +35,8 @@ classdef currentSourceViewer < handle
         lrState = 0;
         leftH
         rightH
+        interpolator
+        smoothness = 1;
     end
     methods
         function obj = currentSourceViewer(hmObj,J,V,figureTitle,autoscale, fps, time)
@@ -76,7 +78,8 @@ classdef currentSourceViewer < handle
             obj.hFigure = figure('Menubar','figure','ToolBar','figure','renderer','opengl','Visible',visible,'Color',color,'Name',obj.figureName);
             position = get(obj.hFigure,'Position');
             set(obj.hFigure,'Position',[position(1:2) 1.25*position(3:4)]);
-            obj.hAxes = axes('Parent',obj.hFigure);         
+            obj.hAxes = axes('Parent',obj.hFigure);      
+            set(obj.hFigure,'KeyPressFcn', @(src,event)scalpSmoothControl(obj));
             toolbarHandle = findall(obj.hFigure,'Type','uitoolbar');
             
             hcb(1) = uitoggletool(toolbarHandle,'CData',labelsOff,'Separator','on','HandleVisibility','off','TooltipString','Labels On/Off','userData',{labelsOn,labelsOff},'State','off');
@@ -122,7 +125,7 @@ classdef currentSourceViewer < handle
                 normals = J;
             else
                 Jm = J;
-                normals = geometricTools.getSurfaceNormals(obj.hmObj.cortex.vertices,obj.hmObj.cortex.faces);    
+                normals = geometricTools.getSurfaceNormals(obj.hmObj.cortex.vertices,obj.hmObj.cortex.faces, false);    
             end
             obj.sourceMagnitud = Jm;
             obj.sourceOrientation = J;
@@ -149,16 +152,15 @@ classdef currentSourceViewer < handle
                     'facelighting','phong','LineStyle','none','FaceAlpha',.85,'Parent',obj.hAxes,'Visible','off');
                 obj.scalpData = [];
             else
-                W = geometricTools.localGaussianInterpolator(obj.hmObj.channelSpace,obj.hmObj.scalp.vertices,0.035);
-                obj.scalpData = W*V;
-                obj.scalpData = max(abs(V(:)))*obj.scalpData/max(abs(obj.scalpData(:)));
+                self.smoothness = max(abs(obj.hmObj.channelSpace(:)))/10;
+                obj.interpolator = geometricTools.localGaussianInterpolator(obj.hmObj.channelSpace,obj.hmObj.scalp.vertices,self.smoothness);
+                obj.scalpData = V;
                 
-                obj.hScalp = patch('vertices',obj.hmObj.scalp.vertices,'faces',obj.hmObj.scalp.faces,'FaceVertexCData',obj.scalpData(:,1),...
+                obj.hScalp = patch('vertices',obj.hmObj.scalp.vertices,'faces',obj.hmObj.scalp.faces,'FaceVertexCData',obj.interpolator*obj.scalpData(:,1),...
                     'FaceColor','interp','FaceLighting','phong','LineStyle','none','FaceAlpha',1,'SpecularColorReflectance',0,...
                     'SpecularExponent',25,'SpecularStrength',0.25,'Parent',obj.hAxes,'Visible','off');
             end
             view(obj.hAxes,[90 0]);
-            
             if ~obj.autoscale
                 disp('Calibrating the color scale...')
                 mxsrc = obj.getRobustLimits(obj.sourceMagnitud(:),0.1);
@@ -167,7 +169,6 @@ classdef currentSourceViewer < handle
                 set(obj.hAxes,'Clim',obj.clim.source);
                 disp('Done.')
             end
-            
             colorbar
             % box on;
             hold(obj.hAxes,'off');
@@ -282,7 +283,6 @@ classdef currentSourceViewer < handle
                 set(thandler,'CData',obj.playIcon)
                 obj.isPaused = true;
             end
-            
             n = size(obj.sourceMagnitud,2);
             if obj.pointer == n
                 obj.pointer =1;
@@ -337,7 +337,7 @@ classdef currentSourceViewer < handle
             set(obj.hFigure,'Name',[obj.figureName ':  ' sprintf('%f sec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
             if isempty(obj.scalpData), drawnow;return;end
             val = obj.scalpData(:,obj.pointer);
-            set(obj.hScalp,'FaceVertexCData',val);
+            set(obj.hScalp,'FaceVertexCData',obj.interpolator*val);
             try %#ok
                 set(obj.hVector,'UData',obj.sourceOrientation(:,1,obj.pointer),'VData',obj.sourceOrientation(:,2,obj.pointer),'WData',obj.sourceOrientation(:,3,obj.pointer));
             end
@@ -354,12 +354,11 @@ classdef currentSourceViewer < handle
                 case 2
                     val(obj.leftH) = nan;
             end
-            
             set(obj.hCortex,'FaceVertexCData',val);
             set(obj.hFigure,'Name',[obj.figureName ':  ' sprintf('%f sec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
             if isempty(obj.scalpData), drawnow;return;end
             val = obj.scalpData(:,obj.pointer);
-            set(obj.hScalp,'FaceVertexCData',val);
+            set(obj.hScalp,'FaceVertexCData',obj.interpolator*val);
             if obj.is3d
                 set(obj.hVector,'UData',obj.sourceOrientation(:,1,obj.pointer),'VData',obj.sourceOrientation(:,2,obj.pointer),'WData',obj.sourceOrientation(:,3,obj.pointer));
             end
@@ -380,7 +379,22 @@ classdef currentSourceViewer < handle
             set(obj.hCortex,'FaceVertexCData',val);
             if isempty(obj.scalpData), drawnow;return;end
             val = obj.scalpData(:,obj.pointer);
-            set(obj.hScalp,'FaceVertexCData',val);
+            set(obj.hScalp,'FaceVertexCData',obj.interpolator*val);
+        end
+        function scalpSmoothControl(obj,~)
+            if isempty(obj.scalpData),return;end
+            key = get(obj.hFigure,'CurrentKey');
+            if strcmp(key,'add')
+                obj.smoothness = obj.smoothness*1.5;
+            elseif strcmp(key,'subtract')
+                obj.smoothness = obj.smoothness/1.5;
+            else
+                return;
+            end 
+            obj.interpolator = geometricTools.localGaussianInterpolator(obj.hmObj.channelSpace,obj.hmObj.scalp.vertices,obj.smoothness);
+            val = obj.scalpData(:,obj.pointer);
+            set(obj.hScalp,'FaceVertexCData',obj.interpolator*val);
+            drawnow;
         end
     end
 end
