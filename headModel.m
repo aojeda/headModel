@@ -52,10 +52,13 @@ classdef headModel < handle
             end
         end
         %%
-        function removeSensor(obj,indices)
-            obj.labels(indices) = [];
-            obj.channelSpace(indices,:) = [];
-            obj.K(indices,:) = [];
+        function removeSensor(obj,channel2remove)
+            if isa(channel2remove,'char') || iscellstr(channel2remove)
+                channel2remove = find(ismember(obj.labels,channel2remove));
+            end
+            obj.labels(channel2remove) = [];
+            obj.channelSpace(channel2remove,:) = [];
+            obj.K(channel2remove,:) = [];
         end
         %%
         function [roiname,roinumber] = labelDipole(obj,dipole)
@@ -89,13 +92,17 @@ classdef headModel < handle
             if nargin<2, channel2remove = [];end
             H = eye(Ny)-ones(Ny)/Ny;    % Average reference operator
             obj.K = H*obj.K;            % Remove the average reference
-            obj.K(channel2remove,:) = [];
-            obj.labels(channel2remove) = [];
-            obj.channelSpace(channel2remove,:) = [];
+            obj.removeSensor(channel2remove)
         end
-        function stdLeadField(obj)
+        function stdLeadField(obj, alpha)
+            if nargin < 2,
+                indz = [];
+            else
+                indz = std(obj.K)< prctile(std(obj.K),alpha);
+            end
             obj.K = bsxfun(@rdivide,obj.K,eps+sqrt(sum(obj.K.^2,1)));
-            % obj.K = bsxfun(@rdivide,obj.K,eps+std(obj.K,[],2));
+            obj.K(:,indz) = 0;
+%             obj.K = bsxfun(@rdivide,obj.K,eps+std(obj.K,[],2));
         end
         %%
         function hFigureObj = plotOnModel(obj,J,V,figureTitle,autoscale,fps,time)
@@ -163,6 +170,7 @@ classdef headModel < handle
             axis equal
             axis vis3d
             grid on;
+            rotate3d
         end
         %%
         function warpTemplate(obj,templateObj, regType)
@@ -244,7 +252,7 @@ classdef headModel < handle
             obj.inskull  = templateObj.inskull;
             obj.cortex   = templateObj.cortex;
             obj.K        = []; 
-            obj.L        = templateObj.L;
+            obj.L        = [];
             obj.atlas    = templateObj.atlas;
                         
             % Affine co-registration
@@ -268,10 +276,9 @@ classdef headModel < handle
                 obj.outskull.vertices = gTools.applyBSplineMapping(Def,spacing,offset,obj.outskull.vertices);
                 obj.inskull.vertices  = gTools.applyBSplineMapping(Def,spacing,offset,obj.inskull.vertices);
                 obj.cortex.vertices   = gTools.applyBSplineMapping(Def,spacing,offset,obj.cortex.vertices);
-                
-                % Project sensors to the scalp (in case they are not already exactly on the scalp)
-                obj.channelSpace = gTools.nearestNeighbor(obj.channelSpace,obj.scalp.vertices);
             end
+            % Project sensors to the scalp (in case they are not already exactly on the scalp)
+            obj.channelSpace = gTools.nearestNeighbor(obj.channelSpace,obj.scalp.vertices);
             disp('Done!')
         end
         %%
@@ -329,7 +336,7 @@ classdef headModel < handle
             c2 = onCleanup(@()delete(headModelConductivity));
             
             dipolesFile = fullfile(rootDir,[rname '_dipoles.txt']);
-            normalsIn = false;
+            normalsIn = true;
             [normals,obj.cortex.faces] = gTools.getSurfaceNormals(obj.cortex.vertices,obj.cortex.faces,normalsIn);
             
             normalityConstrained = ~orientation;
@@ -347,7 +354,7 @@ classdef headModel < handle
             dlmwrite(electrodesFile, obj.channelSpace, 'precision', 6,'delimiter',' ')
             c4 = onCleanup(@()delete(electrodesFile));
             
-            normalsIn = false;
+            normalsIn = true;
             brain = fullfile(rootDir,'brain.tri');
             [normals,obj.inskull.faces] = gTools.getSurfaceNormals(obj.inskull.vertices,obj.inskull.faces,normalsIn);
             om_save_tri(brain,obj.inskull.vertices,obj.inskull.faces,normals)
@@ -642,17 +649,28 @@ classdef headModel < handle
             L = [];
             if isfield(metadata,'surfaces')
                 load(metadata.surfaces)
-                scalp = surfData(1);
-                outskull = surfData(2);
-                inskull = surfData(3);
-                cortex = surfData(4);
+                if length(surfData) >3
+                    scalp = surfData(1);
+                    outskull = surfData(2);
+                    inskull = surfData(3);
+                    cortex = surfData(4);
+                else
+                    scalp = surfData(1);
+                    outskull = surfData(2);
+                    outskull.vertices = outskull.vertices*1.01;
+                    inskull = surfData(2);
+                    cortex = surfData(3);
+                end
                 delete(metadata.surfaces)
             end
             if isfield(metadata,'leadFieldFile')
                 load(metadata.leadFieldFile)
                 delete(metadata.leadFieldFile)
             end
-            
+            if isfield(metadata.atlas,'color')
+                metadata.atlas.colorTable = metadata.atlas.color;
+                metadata.atlas = rmfield(metadata.atlas,'color');
+            end
             fileContent = struct('channelSpace',metadata.channelSpace,'labels',[],'fiducials',[],'scalp',scalp,...
                 'outskull',outskull,'inskull',inskull,'cortex',cortex,'atlas',metadata.atlas,'K',K,'L',L);
             fileContent.labels = metadata.label;
