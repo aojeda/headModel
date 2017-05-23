@@ -385,9 +385,9 @@ classdef currentSourceViewer < handle
             if isempty(obj.scalpData),return;end
             key = get(obj.hFigure,'CurrentKey');
             if strcmp(key,'add')
-                obj.smoothness = obj.smoothness*1.5;
+                obj.smoothness = obj.smoothness*1.125;
             elseif strcmp(key,'subtract')
-                obj.smoothness = obj.smoothness/1.5;
+                obj.smoothness = obj.smoothness/1.125;
             else
                 return;
             end 

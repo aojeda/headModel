@@ -173,6 +173,13 @@ classdef headModel < handle
             rotate3d
         end
         %%
+        function coregister(obj,xyz,labels)
+            fig = Coregister(obj,xyz, false);
+            uiwait(fig);
+            obj.channelSpace = xyz;
+            obj.labels = labels;
+            obj.K = [];
+        end
         function warpTemplate(obj,templateObj, regType)
             % Warps a template head model to the space defined by the sensor positions (channelSpace) 
             % using Dirk-Jan Kroon's nonrigid_version23 toolbox.
@@ -194,8 +201,7 @@ classdef headModel < handle
             if nargin < 2, error('Reference head model is missing.');end
             if nargin < 3, regType = 'bspline';end
             if isempty(obj.channelSpace) || isempty(obj.labels), error('"channelSpace" or "labels" are missing.');end
-            
-            gTools = geometricTools;
+
             th = norminv(0.90);
             % mapping source to target spaces: S->T
             % target space: individual geometry
@@ -219,7 +225,7 @@ classdef headModel < handle
                         point = 0.5*(obj.fiducials.lpa + obj.fiducials.rpa);
                         point = ones(50,1)*point;
                         point(:,3) = linspace(point(3),1.5*max(obj.channelSpace(:,3)),50)';
-                        [~,d] = gTools.nearestNeighbor(obj.channelSpace,point);
+                        [~,d] = geometricTools.nearestNeighbor(obj.channelSpace,point);
                         [~,loc] = min(d);
                         point = point(loc,:);
                         T = [T;point];
@@ -228,7 +234,7 @@ classdef headModel < handle
                     point = 0.5*(obj.fiducials.lpa + obj.fiducials.rpa);
                     point = ones(50,1)*point;
                     point(:,3) = linspace(point(3),1.5*max(obj.channelSpace(:,3)),50)';
-                    [~,d] = gTools.nearestNeighbor(obj.channelSpace,point);
+                    [~,d] = geometricTools.nearestNeighbor(obj.channelSpace,point);
                     [~,loc] = min(d);
                     point = point(loc,:);
                     T = [T;point];
@@ -256,29 +262,29 @@ classdef headModel < handle
             obj.atlas    = templateObj.atlas;
                         
             % Affine co-registration
-            Aff = gTools.affineMapping(S,T);
+            Aff = geometricTools.affineMapping(S,T);
             
             % Affine warping
-            obj.scalp.vertices    = gTools.applyAffineMapping(templateObj.scalp.vertices,Aff);
-            obj.outskull.vertices = gTools.applyAffineMapping(templateObj.outskull.vertices,Aff);
-            obj.inskull.vertices  = gTools.applyAffineMapping(templateObj.inskull.vertices,Aff);
-            obj.cortex.vertices   = gTools.applyAffineMapping(templateObj.cortex.vertices,Aff);
+            obj.scalp.vertices    = geometricTools.applyAffineMapping(templateObj.scalp.vertices,Aff);
+            obj.outskull.vertices = geometricTools.applyAffineMapping(templateObj.outskull.vertices,Aff);
+            obj.inskull.vertices  = geometricTools.applyAffineMapping(templateObj.inskull.vertices,Aff);
+            obj.cortex.vertices   = geometricTools.applyAffineMapping(templateObj.cortex.vertices,Aff);
                         
             % b-spline co-registration (only fiducial landmarks)
             if strcmp(regType,'bspline')
                 options.Verbose = true;
                 options.MaxRef = 2;
-                Saff = gTools.applyAffineMapping(S,Aff);
-                [Def,spacing,offset] = gTools.bSplineMapping(Saff,T,obj.scalp.vertices,options);
+                Saff = geometricTools.applyAffineMapping(S,Aff);
+                [Def,spacing,offset] = geometricTools.bSplineMapping(Saff,T,obj.scalp.vertices,options);
                 
                 % b-spline co-registration (second pass)
-                obj.scalp.vertices    = gTools.applyBSplineMapping(Def,spacing,offset,obj.scalp.vertices);
-                obj.outskull.vertices = gTools.applyBSplineMapping(Def,spacing,offset,obj.outskull.vertices);
-                obj.inskull.vertices  = gTools.applyBSplineMapping(Def,spacing,offset,obj.inskull.vertices);
-                obj.cortex.vertices   = gTools.applyBSplineMapping(Def,spacing,offset,obj.cortex.vertices);
+                obj.scalp.vertices    = geometricTools.applyBSplineMapping(Def,spacing,offset,obj.scalp.vertices);
+                obj.outskull.vertices = geometricTools.applyBSplineMapping(Def,spacing,offset,obj.outskull.vertices);
+                obj.inskull.vertices  = geometricTools.applyBSplineMapping(Def,spacing,offset,obj.inskull.vertices);
+                obj.cortex.vertices   = geometricTools.applyBSplineMapping(Def,spacing,offset,obj.cortex.vertices);
             end
             % Project sensors to the scalp (in case they are not already exactly on the scalp)
-            obj.channelSpace = gTools.nearestNeighbor(obj.channelSpace,obj.scalp.vertices);
+            obj.channelSpace = geometricTools.nearestNeighbor(obj.channelSpace,obj.scalp.vertices);
             disp('Done!')
         end
         %%
@@ -317,9 +323,7 @@ classdef headModel < handle
             existOM = ~status;
             if ~existOM
                 error('OpenMEEG is not intalled. Please download and install the sources you need from https://gforge.inria.fr/frs/?group_id=435.');
-            end
-            
-            gTools = geometricTools;            
+            end        
             rootDir = tempdir;
             binDir = fileparts(which('libmatio.a'));
             [~,rname] = fileparts(tempname);
@@ -337,7 +341,7 @@ classdef headModel < handle
             
             dipolesFile = fullfile(rootDir,[rname '_dipoles.txt']);
             normalsIn = true;
-            [normals,obj.cortex.faces] = gTools.getSurfaceNormals(obj.cortex.vertices,obj.cortex.faces,normalsIn);
+            [normals,obj.cortex.faces] = geometricTools.getSurfaceNormals(obj.cortex.vertices,obj.cortex.faces,normalsIn);
             
             normalityConstrained = ~orientation;
             if normalityConstrained, sourceSpace = [obj.cortex.vertices normals];
@@ -356,17 +360,17 @@ classdef headModel < handle
             
             normalsIn = true;
             brain = fullfile(rootDir,'brain.tri');
-            [normals,obj.inskull.faces] = gTools.getSurfaceNormals(obj.inskull.vertices,obj.inskull.faces,normalsIn);
+            [normals,obj.inskull.faces] = geometricTools.getSurfaceNormals(obj.inskull.vertices,obj.inskull.faces,normalsIn);
             om_save_tri(brain,obj.inskull.vertices,obj.inskull.faces,normals)
             c5 = onCleanup(@()delete(brain));
             
             skull = fullfile(rootDir,'skull.tri');
-            [normals,obj.outskull.faces] = gTools.getSurfaceNormals(obj.outskull.vertices,obj.outskull.faces,normalsIn);
+            [normals,obj.outskull.faces] = geometricTools.getSurfaceNormals(obj.outskull.vertices,obj.outskull.faces,normalsIn);
             om_save_tri(skull,obj.outskull.vertices,obj.outskull.faces,normals)
             c6 = onCleanup(@()delete(skull));
             
             head = fullfile(rootDir,'head.tri');
-            [normals,obj.scalp.faces] = gTools.getSurfaceNormals(obj.scalp.vertices,obj.scalp.faces,normalsIn);
+            [normals,obj.scalp.faces] = geometricTools.getSurfaceNormals(obj.scalp.vertices,obj.scalp.faces,normalsIn);
             om_save_tri(head,obj.scalp.vertices,obj.scalp.faces,normals)
             c7 = onCleanup(@()delete(head));
             
