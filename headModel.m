@@ -174,11 +174,8 @@ classdef headModel < handle
         end
         %%
         function coregister(obj,xyz,labels)
-            fig = Coregister(obj,xyz, false);
+            fig = Coregister(obj,xyz, labels);
             uiwait(fig);
-            obj.channelSpace = xyz;
-            obj.labels = labels;
-            obj.K = [];
         end
         function warpTemplate(obj,templateObj, regType)
             % Warps a template head model to the space defined by the sensor positions (channelSpace) 

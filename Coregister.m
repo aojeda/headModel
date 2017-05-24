@@ -22,7 +22,7 @@ function varargout = Coregister(varargin)
 
 % Edit the above text to modify the response to help Coregister
 
-% Last Modified by GUIDE v2.5 23-May-2017 14:13:34
+% Last Modified by GUIDE v2.5 23-May-2017 16:27:20
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -52,10 +52,10 @@ function Coregister_OpeningFcn(hObject, eventdata, handles, varargin)
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to Coregister (see VARARGIN)
 
-if length(varargin) < 3, varargin{3} = true;end
+if length(varargin) < 3, varargin{3} = [];end
 handles.hm = varargin{1};
 handles.xyz = varargin{2};
-handles.saveFlag = varargin{3};
+handles.labels = varargin{3};
 cla(handles.axes1);
 skinColor = [1,.75,.65];
 patch('vertices',handles.hm.scalp.vertices,'faces',handles.hm.scalp.faces,'facecolor',skinColor,...
@@ -424,21 +424,19 @@ function coregister_CloseRequestFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: delete(hObject) closes the figure
-if handles.saveFlag
-    xyz = get(handles.sensors,'userData');
-    if isempty(xyz)
+xyz = [handles.sensors.XData(:) handles.sensors.YData(:) handles.sensors.ZData(:)];
+if isempty(handles.labels)
+    xyz1 = get(handles.sensors,'userData');
+    if isempty(xyz1) || any(xyz(:)~=xyz1(:))
         save_Callback(hObject, eventdata, handles);
-    else
-        xyz1 = [handles.sensors.XData(:) handles.sensors.YData(:) handles.sensors.ZData(:)];
-        if any(xyz(:)~=xyz1(:))
-            save_Callback(hObject, eventdata, handles);
-        end
     end
 else
-    xyz = [handles.sensors.XData(:) handles.sensors.YData(:) handles.sensors.ZData(:)];
-    assignin('caller', 'xyz', xyz);
+    handles.hm.channelSpace = xyz;
+    handles.hm.labels = handles.labels;
+    handles.hm.K = [];
 end
 delete(hObject);
+
 
 
 % --- Executes on button press in save.
@@ -446,11 +444,39 @@ function save_Callback(hObject, eventdata, handles)
 % hObject    handle to save (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-if handles.saveFlag
+xyz = [handles.sensors.XData(:) handles.sensors.YData(:) handles.sensors.ZData(:)];
+if isempty(handles.labels)
     answer = inputdlg('Variable name','Save',1,{'xyz'});
     if ~isempty(answer)
-        xyz = [handles.sensors.XData(:) handles.sensors.YData(:) handles.sensors.ZData(:)];
         set(handles.sensors,'userData',xyz);
-        assignin('caller', answer{1}, xyz);
+        assignin('base', answer{1}, xyz);
     end
+else
+    handles.hm.channelSpace = xyz;
+    handles.hm.labels = handles.labels;
+    handles.hm.K = [];
 end
+
+
+% --- Executes on button press in autoscale.
+function autoscale_Callback(hObject, eventdata, handles)
+% hObject    handle to autoscale (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+xyz = [handles.sensors.XData(:) handles.sensors.YData(:) handles.sensors.ZData(:)];
+xyz = xyz/norm(xyz)*norm(handles.hm.channelSpace);
+set(handles.sensors,'xdata',xyz(:,1));
+set(handles.sensors,'ydata',xyz(:,2));
+set(handles.sensors,'zdata',xyz(:,3));
+
+% --- Executes on button press in center.
+function center_Callback(hObject, eventdata, handles)
+% hObject    handle to center (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+xyz = [handles.sensors.XData(:) handles.sensors.YData(:) handles.sensors.ZData(:)];
+xyz = bsxfun(@minus,xyz,mean((xyz)));
+xyz = bsxfun(@plus,xyz,mean((handles.hm.channelSpace)));
+set(handles.sensors,'xdata',xyz(:,1));
+set(handles.sensors,'ydata',xyz(:,2));
+set(handles.sensors,'zdata',xyz(:,3));
