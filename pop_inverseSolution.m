@@ -1,51 +1,54 @@
-function EEG = pop_inverseSolution(EEG, solver, windowSize)
-if nargin < 3, windowSize=min([64,round(EEG.srate/8)]);end
+function EEG = pop_inverseSolution(EEG, windowSize, saveFull)
+if nargin < 2, windowSize=min([64,round(EEG.srate/8)]);end
+if nargin < 3, saveFull = true;end
 windowSize=min([64,windowSize]);
-dim = size(EEG.data);
-reshape(EEG.data, dim(1), []);
-n = size(EEG.data,2);
-
 smoothing = hann(windowSize);
 smoothing = smoothing(1:windowSize/2)';
 
-X = zeros(solver.Nx,n);
-for k=1:windowSize/2:n
-    loc = k:k+windowSize-1;
-    loc(loc>n) = [];
-    if isempty(loc), break;end
-    if length(loc) < windowSize, break;end
-    Xtmp = solver.update(EEG.data(:,loc));
-    
-    % Stitch windows
-    if k>1
-        X(:,loc(1:end/2)) = bsxfun(@times, Xtmp(:,1:end/2), smoothing) + bsxfun(@times,X(:,loc(1:end/2)), 1-smoothing);
-        X(:,loc(end/2+1:end)) = Xtmp(:,end/2+1:end);
-    else
-        X(:,loc) = Xtmp;
-    end
+% Load the head model
+try
+    hm = headModel.loadFromFile(EEG.etc.src.hmfile);
+catch
+    error('EEG.etc.src.hmfile seems to be corrupted or missing, to set it right run >> EEG = pop_forwardModel(EEG);')
 end
-fprintf('\n');
+% Initialize the LORETA solver
+solver = WMNInverseSolver(hm);
 
-% Compute average ROI time series
+Nroi = length(hm.atlas.label);
+X = zeros(solver.Nx, EEG.pnts, EEG.trials);
+X_roi = zeros(Nroi, EEG.pnts, EEG.trials);
+
+% Construct the average ROI operator
 P = solver.hm.indices4Structure(solver.hm.atlas.label);
 P = double(P);
 P = bsxfun(@rdivide,P, sum(P))';
-EEG.etc.src.act = P*X;
-EEG.etc.src.roi = solver.hm.atlas.label;
 
-% %% Bandpass
-% Fs = EEG.srate;             % Sampling Frequency
-% Fstop1 = 0.5;             % Stopband Frequency
-% Fpass1 = 1;               % Passband Frequency
-% Fpass2 = EEG.srate/2-2;
-% Fstop2 = EEG.srate/2-1;
-% Dstop = 0.0001;          % Stopband Attenuation
-% Dpass = 0.057501127785;  % Passband Ripple
-% flag  = 'scale';         % Sampling Flag
-% 
-% % Calculate the order from the parameters using KAISERORD.
-% [N,Wn,BETA,TYPE] = kaiserord([Fstop1 Fpass1 Fpass2 Fstop2]/(Fs/2), [0 1 0], [Dpass Dstop Dpass]);
-% 
-% % Calculate the coefficients using the FIR1 function.
-% bp  = fir1(N, Wn, TYPE, kaiser(N+1, BETA), flag);
-% EEG.etc.src.act = filtfilt(bp,1,EEG.etc.src.act')';
+% Perform source estimation
+for trial=1:EEG.trials
+    for k=1:windowSize/2:EEG.pnts
+        loc = k:k+windowSize-1;
+        loc(loc>EEG.pnts) = [];
+        if isempty(loc), break;end
+        if length(loc) < windowSize, break;end
+        
+        % Source estimation
+        Xtmp = solver.update(EEG.data(:,loc,trial));
+        
+        % Stitch windows
+        if k>1
+            X(:,loc(1:end/2),trial) = bsxfun(@times, Xtmp(:,1:end/2), smoothing) + bsxfun(@times,X(:,loc(1:end/2),trial), 1-smoothing);
+            X(:,loc(end/2+1:end),trial) = Xtmp(:,end/2+1:end);
+        else
+            X(:,loc,trial) = Xtmp;
+        end
+    end
+    % Compute average ROI time series
+    X_roi(:,:,trial) = P*X(:,:,trial);
+end
+EEG.etc.src.act = X_roi;
+EEG.etc.src.roi = hm.atlas.label;
+if saveFull
+    EEG.etc.src.actFull = X;
+else
+    EEG.etc.src.actFull = [];
+end
