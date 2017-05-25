@@ -32,7 +32,9 @@ classdef WMNInverseSolver < handle
             X = zeros(obj.Nx, size(Y,2));
             X(obj.srcind,:) = ridgeSVD(Y, obj.Ut, obj.s2, obj.V, numLambdas, plotGCV);
         end
-        function K = stdLeadField(obj,K, alpha)
+    end
+    methods(Static)
+        function K = stdLeadField(K, alpha)
              if nargin < 3
                 indz = [];
             else
