@@ -182,10 +182,15 @@ function Project_Callback(hObject, eventdata, handles)
 x = get(handles.sensors,'xdata');
 y = get(handles.sensors,'ydata');
 z = get(handles.sensors,'zdata');
-xyz = geometricTools.nearestNeighbor([x(:) y(:) z(:)],handles.hm.scalp.vertices);
-set(handles.sensors,'xdata',xyz(:,1));
-set(handles.sensors,'ydata',xyz(:,2));
-set(handles.sensors,'zdata',xyz(:,3));
+%xyz = geometricTools.nearestNeighbor([x(:) y(:) z(:)],handles.hm.scalp.vertices);
+xyz = geometricTools.kNearestNeighbor([x(:) y(:) z(:)],handles.hm.scalp.vertices);
+xyz = mean(xyz,3);
+[azimuth,elevation] = cart2sph(x,y,z);
+[~,~,r] = cart2sph(xyz(:,1),xyz(:,2),xyz(:,3));
+[x,y,z] = sph2cart(azimuth(:),elevation(:),r(:));
+set(handles.sensors,'xdata',x);
+set(handles.sensors,'ydata',y);
+set(handles.sensors,'zdata',z);
 
 
 function R = rotx(a)
