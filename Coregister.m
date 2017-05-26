@@ -22,7 +22,7 @@ function varargout = Coregister(varargin)
 
 % Edit the above text to modify the response to help Coregister
 
-% Last Modified by GUIDE v2.5 23-May-2017 16:27:20
+% Last Modified by GUIDE v2.5 25-May-2017 12:12:36
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -439,9 +439,9 @@ delete(hObject);
 
 
 
-% --- Executes on button press in save.
+% --- Executes on button press in bem.
 function save_Callback(hObject, eventdata, handles)
-% hObject    handle to save (see GCBO)
+% hObject    handle to bem (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 xyz = [handles.sensors.XData(:) handles.sensors.YData(:) handles.sensors.ZData(:)];
@@ -480,3 +480,11 @@ xyz = bsxfun(@plus,xyz,mean((handles.hm.channelSpace)));
 set(handles.sensors,'xdata',xyz(:,1));
 set(handles.sensors,'ydata',xyz(:,2));
 set(handles.sensors,'zdata',xyz(:,3));
+
+
+% --- Executes on button press in bem.
+function bem_Callback(hObject, eventdata, handles)
+handles.hm.channelSpace = [handles.sensors.XData(:) handles.sensors.YData(:) handles.sensors.ZData(:)];
+handles.hm.labels = handles.labels;
+handles.hm.computeLeadFieldBEM([0.33,0.022,0.33],false);
+delete(handles.coregister);
