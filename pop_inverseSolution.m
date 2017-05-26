@@ -15,7 +15,13 @@ end
 solver = WMNInverseSolver(hm);
 
 Nroi = length(hm.atlas.label);
-X = zeros(solver.Nx, EEG.pnts, EEG.trials);
+try
+    X = zeros(solver.Nx, EEG.pnts, EEG.trials);
+catch ME
+    disp(ME)
+    disp('Using a LargeTensor object...')
+    X = LargeTensor([solver.Nx, EEG.pnts, EEG.trials]);
+end             
 X_roi = zeros(Nroi, EEG.pnts, EEG.trials);
 
 % Construct the average ROI operator
@@ -24,6 +30,7 @@ P = double(P);
 P = bsxfun(@rdivide,P, sum(P))';
 
 % Perform source estimation
+disp('LORETA source estimation...')
 for trial=1:EEG.trials
     for k=1:windowSize/2:EEG.pnts
         loc = k:k+windowSize-1;
