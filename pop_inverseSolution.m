@@ -18,7 +18,7 @@ Nroi = length(hm.atlas.label);
 try
     X = zeros(solver.Nx, EEG.pnts, EEG.trials);
 catch ME
-    disp(ME)
+    disp(ME.message)
     disp('Using a LargeTensor object...')
     X = LargeTensor([solver.Nx, EEG.pnts, EEG.trials]);
 end             
@@ -48,9 +48,10 @@ for trial=1:EEG.trials
         else
             X(:,loc,trial) = Xtmp;
         end
+        
+        % Compute average ROI time series
+        X_roi(:,loc,trial) = P*X(:,loc,trial);
     end
-    % Compute average ROI time series
-    X_roi(:,:,trial) = P*X(:,:,trial);
 end
 EEG.etc.src.act = X_roi;
 EEG.etc.src.roi = hm.atlas.label;
