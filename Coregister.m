@@ -491,5 +491,13 @@ set(handles.sensors,'zdata',xyz(:,3));
 function bem_Callback(hObject, eventdata, handles)
 handles.hm.channelSpace = [handles.sensors.XData(:) handles.sensors.YData(:) handles.sensors.ZData(:)];
 handles.hm.labels = handles.labels;
-handles.hm.computeLeadFieldBEM([0.33,0.022,0.33],false);
+prompt = {'Skalp','Skull','Brain','Orientation'};
+dlg_title = 'Conductivity';
+num_lines = 1;
+defaultans = {'0.33','0.022','0.33','off'};
+answer = inputdlg(prompt,dlg_title,num_lines,defaultans);
+if isempty(answer), return;end
+cond = cellfun(@str2double,answer(1:3));
+orientation = ~strcmpi(answer{4},'off');
+handles.hm.computeLeadFieldBEM(cond,orientation);
 delete(handles.coregister);
