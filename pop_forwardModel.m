@@ -1,14 +1,22 @@
-function EEG = pop_forwardModel(EEG)
+function EEG = pop_forwardModel(EEG, hmfile)
 if isempty(EEG.chanlocs)
     error('Empty EEG.chanlocs, you must load your electrode positions first.');
 end
-% Select template
+
+% Select template if not provided
 resources = fullfile(fileparts(which('headModel.m')),'resources');
-[FileName,PathName,FilterIndex] = uigetfile({'*.mat'},'Select template',resources);
-if ~FilterIndex, return;end
+if nargin < 2
+    [FileName,PathName,FilterIndex] = uigetfile({'*.mat'},'Select template',resources);
+    if ~FilterIndex, return;end
+    hmfile = fullfile(PathName,FileName);
+elseif ~exist(hmfile,'file')
+    [FileName,PathName,FilterIndex] = uigetfile({'*.mat'},'Select template',resources);
+    if ~FilterIndex, return;end
+    hmfile = fullfile(PathName,FileName);
+end
 
 % Launch Corregister
-hm = headModel.loadFromFile(fullfile(PathName,FileName));
+hm = headModel.loadFromFile(hmfile);
 labels = {EEG.chanlocs.labels};
 elec = [[EEG.chanlocs.X]' [EEG.chanlocs.Y]' [EEG.chanlocs.Z]'];
 hm.coregister(elec,labels);
