@@ -31,7 +31,13 @@ P = bsxfun(@rdivide,P, sum(P))';
 
 % Perform source estimation
 disp('LORETA source estimation...')
+
+prc_5 = round(linspace(1,EEG.pnts,20));
+iterations = 1:windowSize/2:EEG.pnts-windowSize;
+prc_10 = iterations(round(linspace(1,length(iterations),10)));
+
 for trial=1:EEG.trials
+    fprintf('\nProcessing trial %i of %i: ',trial, EEG.trials);
     for k=1:windowSize/2:EEG.pnts
         loc = k:k+windowSize-1;
         loc(loc>EEG.pnts) = [];
@@ -51,12 +57,20 @@ for trial=1:EEG.trials
         
         % Compute average ROI time series
         X_roi(:,loc,trial) = P*X(:,loc,trial);
+        
+        % Progress indicatior
+        [~,ind] = intersect(loc(end-windowSize/2:end),prc_5);
+        if ~isempty(ind), fprintf('.');end
+        prc = find(prc_10==k);
+        if ~isempty(prc), fprintf('%i%%',prc*10);end
     end
 end
+fprintf(' done!\n');
 EEG.etc.src.act = X_roi;
 EEG.etc.src.roi = hm.atlas.label;
 if saveFull
     EEG.etc.src.actFull = X;
 else
     EEG.etc.src.actFull = [];
+end
 end
