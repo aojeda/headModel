@@ -22,7 +22,7 @@ function varargout = Coregister(varargin)
 
 % Edit the above text to modify the response to help Coregister
 
-% Last Modified by GUIDE v2.5 25-May-2017 12:12:36
+% Last Modified by GUIDE v2.5 30-May-2017 10:39:24
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -65,6 +65,10 @@ camlight(0,0)
 view(handles.axes1,[90 0]);
 hold(handles.axes1,'on');
 handles.sensors = scatter3(handles.xyz(:,1),handles.xyz(:,2),handles.xyz(:,3),'filled','MarkerEdgeColor','k','MarkerFaceColor','y');
+n = length(handles.labels);
+handles.hLabels = [];
+for it=1:n, handles.hLabels(it) = text('Position',handles.xyz(it,:),'String',handles.labels{it});end
+
 mx = max(handles.hm.channelSpace);
 k = 1.2;
 line([0 k*mx(1)],[0 0],[0 0],'LineStyle','-.','Color','b','LineWidth',2)
@@ -99,81 +103,6 @@ function varargout = Coregister_OutputFcn(hObject, eventdata, handles)
 varargout{1} = handles.output;
 
 
-% --- Executes on button press in plus_x.
-function plus_x_Callback(hObject, eventdata, handles)
-% hObject    handle to plus_x (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-s = get(handles.sensors,'xdata');
-s = s+norm(handles.xyz)/200;
-set(handles.sensors,'xdata',s);
-
-% --- Executes on button press in minus_x.
-function minus_x_Callback(hObject, eventdata, handles)
-% hObject    handle to minus_x (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-s = get(handles.sensors,'xdata');
-s = s-norm(handles.xyz)/200;
-set(handles.sensors,'xdata',s);
-
-% --- Executes on button press in plus_y.
-function plus_y_Callback(hObject, eventdata, handles)
-% hObject    handle to plus_y (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-s = get(handles.sensors,'ydata');
-s = s+norm(handles.xyz)/400;
-set(handles.sensors,'ydata',s);
-
-% --- Executes on button press in minus_y.
-function minus_y_Callback(hObject, eventdata, handles)
-% hObject    handle to minus_y (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-s = get(handles.sensors,'ydata');
-s = s-norm(handles.xyz)/400;
-set(handles.sensors,'ydata',s);
-
-% --- Executes on button press in plus_z.
-function plus_z_Callback(hObject, eventdata, handles)
-% hObject    handle to plus_z (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-s = get(handles.sensors,'zdata');
-s = s+norm(handles.xyz)/200;
-set(handles.sensors,'zdata',s);
-
-% --- Executes on button press in minus_z.
-function minus_z_Callback(hObject, eventdata, handles)
-% hObject    handle to minus_z (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-s = get(handles.sensors,'zdata');
-s = s-norm(handles.xyz)/200;
-set(handles.sensors,'zdata',s);
-
-
-% --- Executes on button press in scale_up.
-function scale_up_Callback(hObject, eventdata, handles)
-% hObject    handle to scale_up (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-set(handles.sensors,'xdata',get(handles.sensors,'xdata')*1.01);
-set(handles.sensors,'ydata',get(handles.sensors,'ydata')*1.01);
-set(handles.sensors,'zdata',get(handles.sensors,'zdata')*1.01);
-
-
-% --- Executes on button press in scale_down.
-function scale_down_Callback(hObject, eventdata, handles)
-% hObject    handle to scale_down (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-set(handles.sensors,'xdata',get(handles.sensors,'xdata')/1.01);
-set(handles.sensors,'ydata',get(handles.sensors,'ydata')/1.01);
-set(handles.sensors,'zdata',get(handles.sensors,'zdata')/1.01);
-
-
 % --- Executes on button press in Project.
 function Project_Callback(hObject, eventdata, handles)
 % hObject    handle to Project (see GCBO)
@@ -191,7 +120,9 @@ xyz = mean(xyz,3);
 set(handles.sensors,'xdata',x);
 set(handles.sensors,'ydata',y);
 set(handles.sensors,'zdata',z);
-
+for it=1:length(handles.hLabels), 
+    set(handles.hLabels(it),'Position',1.1*[x(it) y(it) z(it)]);
+end
 
 function R = rotx(a)
 R = zeros(3);
@@ -225,16 +156,25 @@ function t_plus_x_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 s = get(handles.sensors,'xdata');
-s = s+norm(handles.xyz)/200;
+s = s+norm([get(handles.sensors,'xdata')' get(handles.sensors,'ydata')' get(handles.sensors,'zdata')'])/400;
 set(handles.sensors,'xdata',s);
+for it=1:length(handles.hLabels), 
+    pos = get(handles.hLabels(it),'Position');
+    pos(1) = s(it);
+    set(handles.hLabels(it),'Position',pos);
+end
 
 
 % --- Executes on button press in t_plus_y.
 function t_plus_y_Callback(hObject, eventdata, handles)
 s = get(handles.sensors,'ydata');
-s = s+norm(handles.xyz)/400;
+s = s+norm([get(handles.sensors,'xdata')' get(handles.sensors,'ydata')' get(handles.sensors,'zdata')'])/400;
 set(handles.sensors,'ydata',s);
-
+for it=1:length(handles.hLabels), 
+    pos = get(handles.hLabels(it),'Position');
+    pos(2) = s(it);
+    set(handles.hLabels(it),'Position',pos);
+end
 
 % --- Executes on button press in t_plus_z.
 function t_plus_z_Callback(hObject, eventdata, handles)
@@ -242,9 +182,13 @@ function t_plus_z_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 s = get(handles.sensors,'zdata');
-s = s+norm(handles.xyz)/200;
+s = s+norm([get(handles.sensors,'xdata')' get(handles.sensors,'ydata')' get(handles.sensors,'zdata')'])/400;
 set(handles.sensors,'zdata',s);
-
+for it=1:length(handles.hLabels), 
+    pos = get(handles.hLabels(it),'Position');
+    pos(3) = s(it);
+    set(handles.hLabels(it),'Position',pos);
+end
 
 % --- Executes on button press in t_minus_x.
 function t_minus_x_Callback(hObject, eventdata, handles)
@@ -252,9 +196,13 @@ function t_minus_x_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 s = get(handles.sensors,'xdata');
-s = s-norm(handles.xyz)/200;
+s = s-norm([get(handles.sensors,'xdata')' get(handles.sensors,'ydata')' get(handles.sensors,'zdata')'])/400;
 set(handles.sensors,'xdata',s);
-
+for it=1:length(handles.hLabels), 
+    pos = get(handles.hLabels(it),'Position');
+    pos(1) = s(it);
+    set(handles.hLabels(it),'Position',pos);
+end
 
 % --- Executes on button press in t_minus_y.
 function t_minus_y_Callback(hObject, eventdata, handles)
@@ -262,9 +210,13 @@ function t_minus_y_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 s = get(handles.sensors,'ydata');
-s = s-norm(handles.xyz)/400;
+s = s-norm([get(handles.sensors,'xdata')' get(handles.sensors,'ydata')' get(handles.sensors,'zdata')'])/400;
 set(handles.sensors,'ydata',s);
-
+for it=1:length(handles.hLabels), 
+    pos = get(handles.hLabels(it),'Position');
+    pos(2) = s(it);
+    set(handles.hLabels(it),'Position',pos);
+end
 
 % --- Executes on button press in t_minus_z.
 function t_minus_z_Callback(hObject, eventdata, handles)
@@ -272,9 +224,13 @@ function t_minus_z_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 s = get(handles.sensors,'zdata');
-s = s-norm(handles.xyz)/200;
+s = s-norm([get(handles.sensors,'xdata')' get(handles.sensors,'ydata')' get(handles.sensors,'zdata')'])/400;
 set(handles.sensors,'zdata',s);
-
+for it=1:length(handles.hLabels), 
+    pos = get(handles.hLabels(it),'Position');
+    pos(3) = s(it);
+    set(handles.hLabels(it),'Position',pos);
+end
 
 % --- Executes on button press in r_plus_x.
 function r_plus_x_Callback(hObject, eventdata, handles)
@@ -289,6 +245,9 @@ xyz = [x(:) y(:) z(:)]*R';
 set(handles.sensors,'xdata',xyz(:,1));
 set(handles.sensors,'ydata',xyz(:,2));
 set(handles.sensors,'zdata',xyz(:,3));
+for it=1:length(handles.hLabels),
+    set(handles.hLabels(it),'Position',xyz(it,:));
+end
 
 
 % --- Executes on button press in r_plus_y.
@@ -304,6 +263,9 @@ xyz = [x(:) y(:) z(:)]*R';
 set(handles.sensors,'xdata',xyz(:,1));
 set(handles.sensors,'ydata',xyz(:,2));
 set(handles.sensors,'zdata',xyz(:,3));
+for it=1:length(handles.hLabels),
+    set(handles.hLabels(it),'Position',xyz(it,:));
+end
 
 
 % --- Executes on button press in r_plus_z.
@@ -319,6 +281,9 @@ xyz = [x(:) y(:) z(:)]*R';
 set(handles.sensors,'xdata',xyz(:,1));
 set(handles.sensors,'ydata',xyz(:,2));
 set(handles.sensors,'zdata',xyz(:,3));
+for it=1:length(handles.hLabels),
+    set(handles.hLabels(it),'Position',xyz(it,:));
+end
 
 
 % --- Executes on button press in r_minus_x.
@@ -334,7 +299,9 @@ xyz = [x(:) y(:) z(:)]*R';
 set(handles.sensors,'xdata',xyz(:,1));
 set(handles.sensors,'ydata',xyz(:,2));
 set(handles.sensors,'zdata',xyz(:,3));
-
+for it=1:length(handles.hLabels),
+    set(handles.hLabels(it),'Position',xyz(it,:));
+end
 
 % --- Executes on button press in r_minus_y.
 function r_minus_y_Callback(hObject, eventdata, handles)
@@ -349,6 +316,9 @@ xyz = [x(:) y(:) z(:)]*R';
 set(handles.sensors,'xdata',xyz(:,1));
 set(handles.sensors,'ydata',xyz(:,2));
 set(handles.sensors,'zdata',xyz(:,3));
+for it=1:length(handles.hLabels), 
+    set(handles.hLabels(it),'Position',xyz(it,:));
+end
 
 
 % --- Executes on button press in r_minus_z.
@@ -364,6 +334,9 @@ xyz = [x(:) y(:) z(:)]*R';
 set(handles.sensors,'xdata',xyz(:,1));
 set(handles.sensors,'ydata',xyz(:,2));
 set(handles.sensors,'zdata',xyz(:,3));
+for it=1:length(handles.hLabels),
+    set(handles.hLabels(it),'Position',xyz(it,:));
+end
 
 
 % --- Executes on button press in s_plus_x.
@@ -371,46 +344,78 @@ function s_plus_x_Callback(hObject, eventdata, handles)
 % hObject    handle to s_plus_x (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-set(handles.sensors,'xdata',get(handles.sensors,'xdata')*1.01);
+s = get(handles.sensors,'xdata')*1.01;
+set(handles.sensors,'xdata',s);
+for it=1:length(handles.hLabels), 
+    pos = get(handles.hLabels(it),'Position');
+    pos(1) = s(it);
+    set(handles.hLabels(it),'Position',pos);
+end
 
 % --- Executes on button press in s_plus_y.
 function s_plus_y_Callback(hObject, eventdata, handles)
 % hObject    handle to s_plus_y (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-set(handles.sensors,'ydata',get(handles.sensors,'ydata')*1.01);
-
+s = get(handles.sensors,'ydata')*1.01;
+set(handles.sensors,'ydata',s);
+for it=1:length(handles.hLabels), 
+    pos = get(handles.hLabels(it),'Position');
+    pos(2) = s(it);
+    set(handles.hLabels(it),'Position',pos);
+end
 
 % --- Executes on button press in s_plus_z.
 function s_plus_z_Callback(hObject, eventdata, handles)
 % hObject    handle to s_plus_z (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-set(handles.sensors,'zdata',get(handles.sensors,'zdata')*1.01);
+s = get(handles.sensors,'zdata')*1.01;
+set(handles.sensors,'zdata',s);
+for it=1:length(handles.hLabels), 
+    pos = get(handles.hLabels(it),'Position');
+    pos(3) = s(it);
+    set(handles.hLabels(it),'Position',pos);
+end
 
 % --- Executes on button press in s_minus_x.
 function s_minus_x_Callback(hObject, eventdata, handles)
 % hObject    handle to s_minus_x (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-set(handles.sensors,'xdata',get(handles.sensors,'xdata')/1.01);
-
+s = get(handles.sensors,'xdata')/1.01;
+set(handles.sensors,'xdata',s);
+for it=1:length(handles.hLabels), 
+    pos = get(handles.hLabels(it),'Position');
+    pos(1) = s(it);
+    set(handles.hLabels(it),'Position',pos);
+end
 
 % --- Executes on button press in s_minus_y.
 function s_minus_y_Callback(hObject, eventdata, handles)
 % hObject    handle to s_minus_y (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-set(handles.sensors,'ydata',get(handles.sensors,'ydata')/1.01);
-
+s = get(handles.sensors,'ydata')/1.01;
+set(handles.sensors,'ydata',s);
+for it=1:length(handles.hLabels), 
+    pos = get(handles.hLabels(it),'Position');
+    pos(2) = s(it);
+    set(handles.hLabels(it),'Position',pos);
+end
 
 % --- Executes on button press in s_minus_z.
 function s_minus_z_Callback(hObject, eventdata, handles)
 % hObject    handle to s_minus_z (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-set(handles.sensors,'zdata',get(handles.sensors,'zdata')/1.01);
-
+s = get(handles.sensors,'zdata')/1.01;
+set(handles.sensors,'zdata',s);
+for it=1:length(handles.hLabels), 
+    pos = get(handles.hLabels(it),'Position');
+    pos(3) = s(it);
+    set(handles.hLabels(it),'Position',pos);
+end
 
 % --- Executes on button press in restart.
 function restart_Callback(hObject, eventdata, handles)
@@ -420,7 +425,9 @@ function restart_Callback(hObject, eventdata, handles)
 set(handles.sensors,'xdata',handles.xyz(:,1));
 set(handles.sensors,'ydata',handles.xyz(:,2));
 set(handles.sensors,'zdata',handles.xyz(:,3));
-
+for it=1:length(handles.hLabels), 
+    set(handles.hLabels(it),'Position',handles.xyz(it,:));
+end
 
 % --- Executes when user attempts to close coregister.
 function coregister_CloseRequestFcn(hObject, eventdata, handles)
@@ -473,6 +480,7 @@ xyz = xyz/norm(xyz)*norm(handles.hm.channelSpace);
 set(handles.sensors,'xdata',xyz(:,1));
 set(handles.sensors,'ydata',xyz(:,2));
 set(handles.sensors,'zdata',xyz(:,3));
+for it=1:length(handles.hLabels), set(handles.hLabels(it),'Position',1.1*xyz(it,:));end
 
 % --- Executes on button press in center.
 function center_Callback(hObject, eventdata, handles)
@@ -485,6 +493,7 @@ xyz = bsxfun(@plus,xyz,mean((handles.hm.channelSpace)));
 set(handles.sensors,'xdata',xyz(:,1));
 set(handles.sensors,'ydata',xyz(:,2));
 set(handles.sensors,'zdata',xyz(:,3));
+for it=1:length(handles.hLabels), set(handles.hLabels(it),'Position',1.1*xyz(it,:));end
 
 
 % --- Executes on button press in bem.
@@ -499,5 +508,54 @@ answer = inputdlg(prompt,dlg_title,num_lines,defaultans);
 if isempty(answer), return;end
 cond = cellfun(@str2double,answer(1:3));
 orientation = ~strcmpi(answer{4},'off');
+set(handles.coregister, 'pointer', 'watch');
+drawnow;
 handles.hm.computeLeadFieldBEM(cond,orientation);
+set(handles.coregister, 'pointer', 'arrow');
+drawnow;
 delete(handles.coregister);
+
+
+% --- Executes on button press in cancel.
+function cancel_Callback(hObject, eventdata, handles)
+% hObject    handle to cancel (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.hm.removeSensor(handles.hm.labels);
+delete(handles.coregister);
+
+
+% --- Executes on button press in checkbox1.
+function checkbox1_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox1
+if get(hObject,'Value')
+    for it=1:length(handles.hLabels), set(handles.hLabels(it),'Visible','on');end
+else
+    for it=1:length(handles.hLabels), set(handles.hLabels(it),'Visible','off');end
+end
+
+
+% --- Executes on button press in checkbox2.
+function checkbox2_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox2
+if get(hObject,'Value')
+    axis(handles.axes1,'on');
+else
+    axis(handles.axes1,'off');
+end
+
+
+% --- Executes on button press in help.
+function help_Callback(hObject, eventdata, handles)
+% hObject    handle to help (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+web('https://github.com/aojeda/headModel', '-browser')

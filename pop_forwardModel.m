@@ -14,8 +14,10 @@ elec = [[EEG.chanlocs.X]' [EEG.chanlocs.Y]' [EEG.chanlocs.Z]'];
 hm.coregister(elec,labels);
 
 % Save the forward model
-[p,n] = fileparts(fullfile(EEG.filepath,EEG.filename));
-hmfile = fullfile(p,[n 'hm.mat']);
-hm.saveToFile(hmfile);
-EEG.etc.src.hmfile = hmfile;
-disp('The forward model was saved in EEG.etc.src')
+if ~isempty(hm.channelSpace)
+    [p,n] = fileparts(fullfile(EEG.filepath,EEG.filename));
+    hmfile = fullfile(p,[n '_hm.mat']);
+    hm.saveToFile(hmfile);
+    EEG.etc.src.hmfile = hmfile;
+    disp('The forward model was saved in EEG.etc.src')
+end
