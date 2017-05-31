@@ -18,6 +18,12 @@ catch
         return;
     end
 end
+
+% Select channels
+labels_eeg = {EEG.chanlocs.labels};
+[~,loc] = intersect(lower(labels_eeg), lower(hm.labels),'stable');
+EEG = pop_select(EEG,'channel',loc);
+                    
 % Initialize the LORETA solver
 solver = WMNInverseSolver(hm);
 
