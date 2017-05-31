@@ -22,7 +22,7 @@ function varargout = Coregister(varargin)
 
 % Edit the above text to modify the response to help Coregister
 
-% Last Modified by GUIDE v2.5 30-May-2017 10:39:24
+% Last Modified by GUIDE v2.5 31-May-2017 12:44:34
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -60,14 +60,12 @@ cla(handles.axes1);
 skinColor = [1,.75,.65];
 patch('vertices',handles.hm.scalp.vertices,'faces',handles.hm.scalp.faces,'facecolor',skinColor,...
                 'facelighting','phong','LineStyle','none','FaceAlpha',1,'Parent',handles.axes1);
-camlight(0,180)
-camlight(0,0)
 view(handles.axes1,[90 0]);
 hold(handles.axes1,'on');
-handles.sensors = scatter3(handles.xyz(:,1),handles.xyz(:,2),handles.xyz(:,3),'filled','MarkerEdgeColor','k','MarkerFaceColor','y');
+handles.sensors = scatter3(handles.xyz(:,1),handles.xyz(:,2),handles.xyz(:,3),'filled','MarkerEdgeColor','k','MarkerFaceColor','y','Parent',handles.axes1);
 n = length(handles.labels);
 handles.hLabels = [];
-for it=1:n, handles.hLabels(it) = text('Position',handles.xyz(it,:),'String',handles.labels{it});end
+for it=1:n, handles.hLabels(it) = text('Position',handles.xyz(it,:),'String',handles.labels{it},'Parent',handles.axes1);end
 
 mx = max(handles.hm.channelSpace);
 k = 1.2;
@@ -80,6 +78,8 @@ text('Position',[0 0 k*mx(3)],'String','Z','FontSize',12,'FontWeight','bold','Co
 
 hold(handles.axes1,'off');
 axis(handles.axes1,'equal','vis3d','on');
+camlight(0,180)
+camlight(0,0)
 rotate3d
 
 % Choose default command line output for Coregister
@@ -101,6 +101,21 @@ function varargout = Coregister_OutputFcn(hObject, eventdata, handles)
 
 % Get default command line output from handles structure
 varargout{1} = handles.output;
+set(findjobj(handles.t_minus_x),'MouseWheelMovedCallback',{@t_minus_x_Callback,handles})
+set(findjobj(handles.t_minus_y),'MouseWheelMovedCallback',{@t_minus_y_Callback,handles})
+set(findjobj(handles.t_minus_z),'MouseWheelMovedCallback',{@t_minus_z_Callback,handles})
+set(findjobj(handles.t_plus_x),'MouseWheelMovedCallback',{@t_plus_x_Callback,handles})
+set(findjobj(handles.t_plus_y),'MouseWheelMovedCallback',{@t_plus_y_Callback,handles})
+set(findjobj(handles.t_plus_z),'MouseWheelMovedCallback',{@t_plus_z_Callback,handles})
+set(findjobj(handles.s_minus_x),'MouseWheelMovedCallback',{@s_minus_x_Callback,handles})
+set(findjobj(handles.s_minus_y),'MouseWheelMovedCallback',{@s_minus_y_Callback,handles})
+set(findjobj(handles.s_minus_z),'MouseWheelMovedCallback',{@s_minus_z_Callback,handles})
+set(findjobj(handles.r_minus_x),'MouseWheelMovedCallback',{@r_minus_x_Callback,handles})
+set(findjobj(handles.r_minus_y),'MouseWheelMovedCallback',{@r_minus_y_Callback,handles})
+set(findjobj(handles.r_minus_z),'MouseWheelMovedCallback',{@r_minus_z_Callback,handles})
+set(findjobj(handles.r_plus_x),'MouseWheelMovedCallback',{@r_plus_x_Callback,handles})
+set(findjobj(handles.r_plus_y),'MouseWheelMovedCallback',{@r_plus_y_Callback,handles})
+set(findjobj(handles.r_plus_z),'MouseWheelMovedCallback',{@r_plus_z_Callback,handles})
 
 
 % --- Executes on button press in Project.
@@ -559,3 +574,13 @@ function help_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 web('https://github.com/aojeda/headModel', '-browser')
+
+
+% --- Executes on scroll wheel click while the figure is in focus.
+function coregister_WindowScrollWheelFcn(hObject, eventdata, handles)
+% hObject    handle to coregister (see GCBO)
+% eventdata  structure with the following fields (see MATLAB.UI.FIGURE)
+%	VerticalScrollCount: signed integer indicating direction and number of clicks
+%	VerticalScrollAmount: number of lines scrolled for each click
+% handles    structure with handles and user data (see GUIDATA)
+
