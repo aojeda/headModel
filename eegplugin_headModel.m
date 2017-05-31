@@ -11,7 +11,8 @@
 %
 % See also: eeglab()
 
-function eegplugin_headModel(fig,try_strings, catch_strings)
+function vers = eegplugin_headModel(fig,try_strings, catch_strings)
+vers = 'headModel1.0.0';
 p = fileparts(which('eeglab'));
 p = fullfile(p, 'plugins', 'headModel');
 addpath(genpath(p));
