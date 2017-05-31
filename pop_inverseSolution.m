@@ -9,7 +9,14 @@ smoothing = smoothing(1:windowSize/2)';
 try
     hm = headModel.loadFromFile(EEG.etc.src.hmfile);
 catch
-    error('EEG.etc.src.hmfile seems to be corrupted or missing, to set it right run >> EEG = pop_forwardModel(EEG);')
+    errordlg('EEG.etc.src.hmfile seems to be corrupted or missing, to set it right next we will run >> EEG = pop_forwardModel(EEG)');
+    EEG = pop_forwardModel(EEG);
+    try
+        hm = headModel.loadFromFile(EEG.etc.src.hmfile);
+    catch
+        errordlg('For the second time EEG.etc.src.hmfile seems to be corrupted or missing, try the command >> EEG = pop_forwardModel(EEG);');
+        return;
+    end
 end
 % Initialize the LORETA solver
 solver = WMNInverseSolver(hm);
