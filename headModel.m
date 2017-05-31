@@ -1,5 +1,5 @@
-% Defines the class headModel for solving forward/inverse problem of the EEG. 
-% 
+% Defines the class headModel for solving forward/inverse problem of the EEG.
+%
 % Author: Alejandro Ojeda, Syntrogi Inc. 2015
 
 classdef headModel < handle
@@ -10,7 +10,7 @@ classdef headModel < handle
         inskull = []'
         outskull = [];
         scalp = [];
-        fiducials = []; % xyz of the fiducial landmarks: nassion, lpa, rpa, vertex, and inion.                       
+        fiducials = []; % xyz of the fiducial landmarks: nassion, lpa, rpa, vertex, and inion.
         atlas           % Atlas that labels each vertex in the most internal surface (gray matter).
         K = [];         % Lead field matrix
         L = [];         % Laplacian operator
@@ -84,7 +84,7 @@ classdef headModel < handle
                 obj.plotMontage();
                 return;
             end
-            h = headModelViewerHandle(obj);
+            h = vis.headModelViewer(obj);
         end
         %%
         function H = removeAverageReference(obj,channel2remove)
@@ -107,16 +107,16 @@ classdef headModel < handle
         %%
         function hFigureObj = plotOnModel(obj,J,V,figureTitle,autoscale,fps,time)
             % Plots cortical/topographical maps onto the cortical/scalp surface.
-            % 
+            %
             % Input parameters:
             %       J:           cortical map size number of vertices of the cortical surface by number of time points
-            %       V:           topographic map size number of vertices of the scalp surface by number of time points; 
-            %                    if V is empty, a single color is used simulating the color of the skin 
+            %       V:           topographic map size number of vertices of the scalp surface by number of time points;
+            %                    if V is empty, a single color is used simulating the color of the skin
             %       figureTitle: title of the figure (optional)
-            %                    
-            % Output argument:   
-            %       hFigure:     figure handle 
-            
+            %
+            % Output argument:
+            %       hFigure:     figure handle
+
             if nargin < 2, error('Not enough input arguments');end
             if nargin < 3, V = [];end
             if nargin < 4, figureTitle = '';end
@@ -128,13 +128,13 @@ classdef headModel < handle
             if isempty(fps), fps = 30;end
             if isa(J,'gpuArray'), J = gather(J);end
             if isa(V,'gpuArray'), V = gather(V);end
-            hFigureObj = currentSourceViewer(obj,J,V,figureTitle, autoscale, fps, time);
+            hFigureObj = vis.currentSourceViewer(obj,J,V,figureTitle, autoscale, fps, time);
         end
         %%
         function h = plotMontage(obj,showNewfig)
             % Plots a figure with the xyz distribution of sensors, fiducial landmarks, and
             % coordinate axes.
-            
+
             if isempty(obj.channelSpace) || isempty(obj.labels);error('"channelSpace or "labels" are empty.');end
             if nargin < 2, showNewfig = true;end
             color = [0.93 0.96 1];
@@ -153,7 +153,7 @@ classdef headModel < handle
             text('Position',[k*mx(1) 0 0],'String','X','FontSize',12,'FontWeight','bold','Color','b')
             text('Position',[0 k*mx(2) 0],'String','Y','FontSize',12,'FontWeight','bold','Color','g')
             text('Position',[0 0 k*mx(3)],'String','Z','FontSize',12,'FontWeight','bold','Color','r')
-            
+
             try %#ok
                 scatter3(obj.fiducials.nasion(1),obj.fiducials.nasion(2),obj.fiducials.nasion(3),'filled','MarkerEdgeColor','k','MarkerFaceColor','K');
                 text('Position',1.1*obj.fiducials.nasion,'String','Nas','FontSize',12,'FontWeight','bold','Color','k');
@@ -178,20 +178,20 @@ classdef headModel < handle
             uiwait(fig);
         end
         function warpTemplate(obj,templateObj, regType)
-            % Warps a template head model to the space defined by the sensor positions (channelSpace) 
+            % Warps a template head model to the space defined by the sensor positions (channelSpace)
             % using Dirk-Jan Kroon's nonrigid_version23 toolbox.
             %
             % For more details see: http://www.mathworks.com/matlabcentral/fileexchange/20057-b-spline-grid-image-and-point-based-registration
-            % 
+            %
             % Input arguments:
             %       templateObj:     head model object that will be warped
             %       regType:         co-registration type, could be 'affine' or 'bspline'. In case
             %                        of 'affine' only the affine mapping is estimated (rotation,
-            %                        traslation, and scaling). 'bspline' starts from the affine 
+            %                        traslation, and scaling). 'bspline' starts from the affine
             %                        mapping and goes on to estimate a non-linear defformation
             %                        field that captures better the shape of the head.
             %
-            % References: 
+            % References:
             %    D. Rueckert et al. "Nonrigid Registration Using Free-Form Deformations: Application to Breast MR Images".
             %    Seungyong Lee, George Wolberg, and Sung Yong Shing, "Scattered Data interpolation with Multilevel B-splines"
 
@@ -202,18 +202,18 @@ classdef headModel < handle
             th = norminv(0.90);
             % mapping source to target spaces: S->T
             % target space: individual geometry
-            
+
             try
                 T = [obj.fiducials.nasion;...
                     obj.fiducials.lpa;...
                     obj.fiducials.rpa];
-                
+
                 % source space: template
                 S = [templateObj.fiducials.nasion;...
                     templateObj.fiducials.lpa;...
                     templateObj.fiducials.rpa;...
                     templateObj.fiducials.vertex];
-                
+
                 % estimates vertex if is missing
                 if isfield(obj.fiducials,'vertex')
                     if numel(obj.fiducials.vertex) == 3
@@ -236,7 +236,7 @@ classdef headModel < handle
                     point = point(loc,:);
                     T = [T;point];
                 end
-                
+
                 if isfield(obj.fiducials,'inion')
                     if numel(obj.fiducials.vertex) == 3
                         T = [T;obj.fiducials.inion];
@@ -249,31 +249,31 @@ classdef headModel < handle
                 T = obj.channelSpace(loc1,:);
                 S = templateObj.channelSpace(loc2,:);
             end
-            
+
             obj.scalp    = templateObj.scalp;
             obj.outskull = templateObj.outskull;
             obj.inskull  = templateObj.inskull;
             obj.cortex   = templateObj.cortex;
-            obj.K        = []; 
+            obj.K        = [];
             obj.L        = [];
             obj.atlas    = templateObj.atlas;
-                        
+
             % Affine co-registration
             Aff = geometricTools.affineMapping(S,T);
-            
+
             % Affine warping
             obj.scalp.vertices    = geometricTools.applyAffineMapping(templateObj.scalp.vertices,Aff);
             obj.outskull.vertices = geometricTools.applyAffineMapping(templateObj.outskull.vertices,Aff);
             obj.inskull.vertices  = geometricTools.applyAffineMapping(templateObj.inskull.vertices,Aff);
             obj.cortex.vertices   = geometricTools.applyAffineMapping(templateObj.cortex.vertices,Aff);
-                        
+
             % b-spline co-registration (only fiducial landmarks)
             if strcmp(regType,'bspline')
                 options.Verbose = true;
                 options.MaxRef = 2;
                 Saff = geometricTools.applyAffineMapping(S,Aff);
                 [Def,spacing,offset] = geometricTools.bSplineMapping(Saff,T,obj.scalp.vertices,options);
-                
+
                 % b-spline co-registration (second pass)
                 obj.scalp.vertices    = geometricTools.applyBSplineMapping(Def,spacing,offset,obj.scalp.vertices);
                 obj.outskull.vertices = geometricTools.applyBSplineMapping(Def,spacing,offset,obj.outskull.vertices);
@@ -306,10 +306,10 @@ classdef headModel < handle
             %         185(1), 125???132.
             %   [3] Wendel, K., Malmivuo, J., 2006. Correlation between live and post mortem skull
             %         conductivity measurements. Conf Proc IEEE Eng Med Biol Soc 1, 4285-4288.
-            %   [4] Oostendorp, T.F., Delbeke, J., Stegeman, D.F., 2000. The conductivity of the 
+            %   [4] Oostendorp, T.F., Delbeke, J., Stegeman, D.F., 2000. The conductivity of the
             %         human skull: Results of in vivo and in vitro measurements. Ieee Transactions
             %         on Biomedical Engineering 47, 1487-1492.
-                        
+
             if nargin < 2, conductivity = [0.33 0.022 0.33];end
             if nargin < 3, orientation = true;end
             if isempty(obj.channelSpace), error('"channelSpace" is missing.');end
@@ -320,7 +320,7 @@ classdef headModel < handle
             existOM = ~status;
             if ~existOM
                 error('OpenMEEG is not intalled. Please download and install the sources you need from https://gforge.inria.fr/frs/?group_id=435.');
-            end        
+            end
             rootDir = tempdir;
             binDir = fileparts(which('libmatio.a'));
             [~,rname] = fileparts(tempname);
@@ -335,11 +335,11 @@ classdef headModel < handle
                 conductivity(1),conductivity(3),conductivity(2));
             fclose(fid);
             c2 = onCleanup(@()delete(headModelConductivity));
-            
+
             dipolesFile = fullfile(rootDir,[rname '_dipoles.txt']);
             normalsIn = true;
             [normals,obj.cortex.faces] = geometricTools.getSurfaceNormals(obj.cortex.vertices,obj.cortex.faces,normalsIn);
-            
+
             normalityConstrained = ~orientation;
             if normalityConstrained, sourceSpace = [obj.cortex.vertices normals];
             else One = ones(length(normals(:,2)),1);
@@ -350,33 +350,33 @@ classdef headModel < handle
             end
             dlmwrite(dipolesFile, sourceSpace, 'precision', 6,'delimiter',' ')
             c3 = onCleanup(@()delete(dipolesFile));
-            
+
             electrodesFile = fullfile(rootDir,[rname '_elec.txt']);
             dlmwrite(electrodesFile, obj.channelSpace, 'precision', 6,'delimiter',' ')
             c4 = onCleanup(@()delete(electrodesFile));
-            
+
             normalsIn = true;
             brain = fullfile(rootDir,'brain.tri');
             [normals,obj.inskull.faces] = geometricTools.getSurfaceNormals(obj.inskull.vertices,obj.inskull.faces,normalsIn);
             om_save_tri(brain,obj.inskull.vertices,obj.inskull.faces,normals)
             c5 = onCleanup(@()delete(brain));
-            
+
             skull = fullfile(rootDir,'skull.tri');
             [normals,obj.outskull.faces] = geometricTools.getSurfaceNormals(obj.outskull.vertices,obj.outskull.faces,normalsIn);
             om_save_tri(skull,obj.outskull.vertices,obj.outskull.faces,normals)
             c6 = onCleanup(@()delete(skull));
-            
+
             head = fullfile(rootDir,'head.tri');
             [normals,obj.scalp.faces] = geometricTools.getSurfaceNormals(obj.scalp.vertices,obj.scalp.faces,normalsIn);
             om_save_tri(head,obj.scalp.vertices,obj.scalp.faces,normals)
             c7 = onCleanup(@()delete(head));
-            
+
             hmFile    = fullfile(rootDir,'hm.bin');    c8  = onCleanup(@()delete(hmFile));
             hmInvFile = fullfile(rootDir,'hm_inv.bin');c9  = onCleanup(@()delete(hmInvFile));
             dsmFile   = fullfile(rootDir,'dsm.bin');   c10 = onCleanup(@()delete(dsmFile));
             h2emFile  = fullfile(rootDir,'h2em.bin');  c11 = onCleanup(@()delete(h2emFile));
             lfFile    = fullfile(rootDir,[rname '_LF.mat']);
-            
+
             if ~existOM
                 runHere = './';
                 wDir = pwd;
@@ -386,16 +386,16 @@ classdef headModel < handle
             try
                 out = system([runHere 'om_assemble -HM "' headModelGeometry '" "' headModelConductivity '" "' hmFile '"']);
                 if out, error('An unexpected error occurred running OpenMEEG binaries. Report this to alejandro@sccn.ucsd.edu');end
-                
+
                 out = system([runHere 'om_minverser "' hmFile '" "' hmInvFile '"']);
                 if out, error('An unexpected error occurred running OpenMEEG binaries. Report this to alejandro@sccn.ucsd.edu');end
-                
+
                 out = system([runHere 'om_assemble -DSM "' headModelGeometry '" "' headModelConductivity '" "' dipolesFile '" "' dsmFile '"']);
                 if out, error('An unexpected error occurred running OpenMEEG binaries. Report this to alejandro@sccn.ucsd.edu');end
-                
+
                 out = system([runHere 'om_assemble -H2EM "' headModelGeometry '" "' headModelConductivity '" "' electrodesFile '" "' h2emFile '"']);
                 if out, error('An unexpected error occurred running OpenMEEG binaries. Report this to alejandro@sccn.ucsd.edu');end
-                
+
                 out = system([runHere 'om_gain -EEG "' hmInvFile '" "' dsmFile '" "' h2emFile '" "' lfFile '"']);
                 if out, error('An unexpected error occurred running OpenMEEG binaries. Report this to alejandro@sccn.ucsd.edu');end
             catch ME
@@ -404,7 +404,7 @@ classdef headModel < handle
             end
             if strcmp(pwd,binDir), cd(wDir);end
             if ~exist(lfFile,'file'), error('An unexpected error occurred running OpenMEEG binaries. Report this to alejandro@sccn.ucsd.edu');end
-                        
+
             load(lfFile);
             obj.K = linop;
             clear linop;
@@ -459,7 +459,7 @@ classdef headModel < handle
             if isempty(ecd), ecd = 3*ones(N,3);end
             if nargin < 4, dipoleLabel = [];end
             if nargin < 5, figureTitle = '';end
-            hFigureObj = equivalentCurrentDipoleViewer(obj,xyz,ecd,dipoleLabel,figureTitle);
+            hFigureObj = vis.equivalentCurrentDipoleViewer(obj,xyz,ecd,dipoleLabel,figureTitle);
         end
         function hFigureObj = plotDipolesForwardProjection(obj,xyz,figureTitle,autoscale,fps)
             if nargin < 3, figureTitle = '';end
@@ -467,7 +467,7 @@ classdef headModel < handle
             if nargin < 5, fps = 30;end
             [FP,S] = getForwardProjection(obj,xyz);
             hFigureObj = obj.plotOnModel(S,FP,figureTitle,autoscale,fps);
-            
+
         end
        %%
         function [sourceSpace,rmIndices] = removeStructureFromSourceSpace(obj,structName,maxNumVertices2rm, structIndices)
@@ -551,7 +551,7 @@ classdef headModel < handle
                 end
             end
         end
-        
+
         %% Deprecated fields and methods
         function surfaces = get.surfaces(obj)
             surfData = [obj.scalp;obj.outskull;obj.inskull;obj.cortex];
@@ -598,7 +598,7 @@ classdef headModel < handle
                fileContent = headModel.loadFromFile_old(filename);
             end
             pnames = fieldnames(fileContent);
-            inputParameters = cell(length(pnames),2);            
+            inputParameters = cell(length(pnames),2);
             for k=1:length(pnames)
                 inputParameters{k,1} = pnames{k};
                 inputParameters{k,2} = fileContent.(pnames{k});
@@ -693,7 +693,7 @@ for it=1:Nl
         rmThis(it) = true;
         count = count+1;
     elseif ~isempty(strfind(lowerLabels{it},'fidt9')) || ~isempty(strfind(lowerLabels{it},'lpa'))
-        fiducials.lpa = elec(it,:);  
+        fiducials.lpa = elec(it,:);
         rmThis(it) = true;
         count = count+1;
     elseif ~isempty(strfind(lowerLabels{it},'fidt10')) || ~isempty(strfind(lowerLabels{it},'rpa'))
