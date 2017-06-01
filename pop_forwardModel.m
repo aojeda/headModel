@@ -1,4 +1,10 @@
-function EEG = pop_forwardModel(EEG, hmfile)
+function EEG = pop_forwardModel(EEG, hmfile, conductivity, orientation)
+% Input arguments:
+%       conductivity: conductivity of each layer of tissue, scalp - skull - brain,
+%                     default: 0.33-0.022-0.33 S/m. See [2, 3, 4] for details.
+%        orientation: if true, computes the orientation free lead field, otherwise
+%                     it constrain the dipoles to be normal to the cortical surface
+            
 if isempty(EEG.chanlocs)
     error('Empty EEG.chanlocs, you must load your electrode positions first.');
 end
@@ -14,12 +20,25 @@ elseif ~exist(hmfile,'file')
     if ~FilterIndex, return;end
     hmfile = fullfile(PathName,FileName);
 end
+if nargin < 2, conductivity = [0.33 0.022 0.33];end
+if nargin < 3, orientation = true;end
 
-% Launch Corregister
 hm = headModel.loadFromFile(hmfile);
 labels = {EEG.chanlocs.labels};
-elec = [[EEG.chanlocs.X]' [EEG.chanlocs.Y]' [EEG.chanlocs.Z]'];
-hm.coregister(elec,labels);
+xyz = [[EEG.chanlocs.X]' [EEG.chanlocs.Y]' [EEG.chanlocs.Z]'];
+
+[~,~,loc2] = intersect(labels,hm.labels,'stable');
+if length(labels) == length(loc2)
+    hm.labels = labels;
+    hm.channelSpace = hm.channelSpace(loc2,:);
+    if ~isempty(hm.K), 
+        hm.K = hm.K(loc2,:);
+    else
+        hm.computeLeadFieldBEM(conductivity,orientation);
+    end
+else
+    hm.coregister(xyz, labels);
+end
 
 % Save the forward model
 if ~isempty(hm.channelSpace)

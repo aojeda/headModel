@@ -173,9 +173,18 @@ classdef headModel < handle
             rotate3d
         end
         %%
+        
         function coregister(obj,xyz,labels)
-            fig = Coregister(obj,xyz, labels);
-            uiwait(fig);
+            [~,loc1,loc2] = intersect(labels,obj.labels,'stable');
+            if ~isempty(loc2)
+                Aff = geometricTools.affineMapping(xyz(loc1,:),obj.channelSpace(loc2,:));
+                xyz = geometricTools.applyAffineMapping(xyz,Aff);
+                fig = Coregister(obj,xyz, labels);
+                uiwait(fig);
+            else
+                fig = Coregister(obj,xyz, labels);
+                uiwait(fig);
+            end
         end
         function warpTemplate(obj,templateObj, regType)
             % Warps a template head model to the space defined by the sensor positions (channelSpace)
