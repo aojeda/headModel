@@ -90,7 +90,8 @@ if strcmp([list(1:2).name],'...')
     list([1 2]) = [];
 end
 for i = 1:length(list), 
-    list(i).name = sprintf('%s%s%s',folder,filesep,list(i).name);
+    % list(i).name = sprintf('%s%s%s',folder,filesep,list(i).name); % commented out to increase speed
+    list(i).name = [folder,filesep,list(i).name];
 end
 if nargin == 2 && level == 1, return; end
 for i = 1:length(list)
