@@ -21,9 +21,10 @@ Finding solutions for each point listed above is highly nontrivial for many rese
  
 ### Batteries are included
 * We provide pre-built and curated surface-based head models in the following variants:
-	* Colins27 template with 2003 cortical sources (vertices) and 65 scalp sensors superset of the 10/20 standard montage
-	* Colins27 template with 5003 cortical sources and 65 scalp sensors superset of  the 10/20 standard montage
-	* Colins27 template with 5003 cortical sources and 339 scalp sensors superset of  the 10/20 standard montage
+	* Colins27 template with 2003 cortical sources (vertices) and 65 scalp sensors superset of the 10/20 standard montage.
+	* Colins27 template with 5003 cortical sources and 65 scalp sensors superset of  the 10/20 standard montage.
+	* Colins27 template with 5003 cortical sources and 339 scalp sensors superset of  the 10/20 standard montage.
+* All templates come with the 68 structures [Desikan & Killiany](https://www.ncbi.nlm.nih.gov/pubmed/16530430) anatomical atlas. 
 * We build high-level interfaces to EEGLAB and OpenMEEG toolboxes.
 * We provide several out-of-the box visualization tools.
 
