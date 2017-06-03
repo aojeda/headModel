@@ -45,7 +45,7 @@ P = bsxfun(@rdivide,P, sum(P))';
 % Perform source estimation
 disp('LORETA source estimation...')
 
-prc_5 = round(linspace(1,EEG.pnts,20));
+prc_5 = round(linspace(1,EEG.pnts,30));
 iterations = 1:windowSize/2:EEG.pnts-windowSize;
 prc_10 = iterations(round(linspace(1,length(iterations),10)));
 
