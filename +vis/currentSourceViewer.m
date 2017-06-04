@@ -150,8 +150,8 @@ classdef currentSourceViewer < handle
                     'facelighting','phong','LineStyle','none','FaceAlpha',.85,'Parent',obj.hAxes,'Visible','off');
                 obj.scalpData = [];
             else
-                self.smoothness = max(abs(obj.hmObj.channelSpace(:)))/10;
-                obj.interpolator = geometricTools.localGaussianInterpolator(obj.hmObj.channelSpace,obj.hmObj.scalp.vertices,self.smoothness);
+                obj.smoothness = max(abs(obj.hmObj.channelSpace(:)))/10;
+                obj.interpolator = geometricTools.localGaussianInterpolator(obj.hmObj.channelSpace,obj.hmObj.scalp.vertices,obj.smoothness);
                 obj.scalpData = V;
 
                 obj.hScalp = patch('vertices',obj.hmObj.scalp.vertices,'faces',obj.hmObj.scalp.faces,'FaceVertexCData',obj.interpolator*obj.scalpData(:,1),...
@@ -383,9 +383,9 @@ classdef currentSourceViewer < handle
             if isempty(obj.scalpData),return;end
             key = get(obj.hFigure,'CurrentKey');
             if strcmp(key,'add')
-                obj.smoothness = obj.smoothness*1.125;
+                obj.smoothness = obj.smoothness*1.0125;
             elseif strcmp(key,'subtract')
-                obj.smoothness = obj.smoothness/1.125;
+                obj.smoothness = obj.smoothness/1.0125;
             else
                 return;
             end
