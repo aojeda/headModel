@@ -24,8 +24,11 @@ hm = headModel('channelSpace', channelSpace, 'labels', labels);
 
 Use the code snippet below to load and save the object, which includes all the information contained in it, i.e. skin , skul, and cortical surfaces, atlas, lead field, etc.
 ```MATLAB
+% Load from file
 headModelFilename = fullfile('resources','head_modelColin27_5003_Standard-10-5-Cap339.mat');
 hm.loadFromFile(headModelFilename);
+
+% Save to file
 myHeadModelFilename = tempname;
 hm.saveToFile(myHeadModelFilename);
 ```
