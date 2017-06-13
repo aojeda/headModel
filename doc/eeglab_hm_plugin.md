@@ -1,5 +1,6 @@
 ## GUI interface for EEGLAB
-We can use the `headModel` toolbox as a plug-in for [EEGLAB](https://sccn.ucsd.edu/eeglab/) by cloning or downloading this repo to the `eeglab/plugins/` folder in your local machine. Once EEGLAB's GUI pops up, we can access the `headModel` menu item in the tools menu as shown in the figure below
+We can use the `headModel` toolbox as a plug-in for [EEGLAB](https://sccn.ucsd.edu/eeglab/) by cloning or downloading this repo to the `eeglab/plugins/` folder in your local machine. Once EEGLAB's GUI pops up, we can access the `headModel` menu item in the tools menu as shown in the figure below 
+
 ![eeglab_hm_plugin](https://github.com/aojeda/headModel/blob/master/doc/assets/eeglab_hm_plugin.png)
 
 ### Surface-based (BEM)forward modeling
