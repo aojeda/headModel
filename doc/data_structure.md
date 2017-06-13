@@ -14,8 +14,18 @@ The `headModel` class has the following proporties:
 * `fiducials`: structure containing the xyz coordinates of the fiducial landmarks `nassion`, `lpa`, `rpa`, `vertex`, and `inion`, it can be empty if no fiducials are marked
 
 # Create, load, and save a `headModel` object
-```MATLAB```
+A `headModel` object can be created calling the method os the same name using a key/value pair input, as shown in the following example. 
+
+```MATLAB
 channelSpace = randn(4,3);
 labels = {'Ch1', 'Ch2', 'Ch3', 'Ch4'};
 hm = headModel('channelSpace', channelSpace, 'labels', labels);
+```
+
+Use the code snippet below to load and save the object, which includes all the information contained in it, i.e. skin , skul, and cortical surfaces, atlas, lead field, etc.
+```MATLAB
+headModelFilename = fullfile('resources','head_modelColin27_5003_Standard-10-5-Cap339.mat');
+hm.loadFromFile(headModelFilename);
+myHeadModelFilename = tempname;
+hm.saveToFile(myHeadModelFilename);
 ```
