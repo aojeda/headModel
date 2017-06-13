@@ -7,3 +7,5 @@ We can use the `headModel` toolbox as a plug-in for [EEGLAB](https://sccn.ucsd.e
 This option allows us to perform a semi-automatic coregistration between our channel positions and a selected head model template. After we are done with the coregistration we can proceed to compute the lead field model for our montage and selected head model using the Boundary Element Method as implemented by the [OpenMEEG](https://openmeeg.github.io/) toolbox. Learn more in the page for [Coregistration](https://github.com/aojeda/headModel/blob/master/doc/coregistration.md).
 
 ### Inverse source estimation (LORETA)
+
+[Back](https://github.com/aojeda/headModel/blob/master/doc/Documentation.md)

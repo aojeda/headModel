@@ -33,4 +33,4 @@ myHeadModelFilename = tempname;
 hm.saveToFile(myHeadModelFilename);
 ```
 
-[Back](https://github.com/aojeda/headModel/blob/master/doc/Content.md)
+[Back](https://github.com/aojeda/headModel/blob/master/doc/Documentation.md)

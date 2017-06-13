@@ -54,4 +54,4 @@ Use the `Run BEM` to compute the lead field matrix using the BEM method as imple
 
 *Note: I have noticed that `OpenMEEG` appears to crash in some systems even after building it from source, if you are one of those lucky people to have such experience, you can contact the maintainers of that toolbox and, if you don't mind, please let me know if a new  patch is issued so that I can update this tutorial. 
 
-[Back](https://github.com/aojeda/headModel/blob/master/doc/Content.md)
+[Back](https://github.com/aojeda/headModel/blob/master/doc/Documentation.md)

@@ -40,4 +40,4 @@ Finding solutions for each point listed above is highly nontrivial for many rese
 * We cannot solve the forward problem of the EEG using Finite Element method (FEM), for that you can use the [NFT](https://sccn.ucsd.edu/nft/index.html) toolbox, which is part of the EEGLAB plug-in suite.
 
 
-### [Documentation](https://github.com/aojeda/headModel/blob/master/doc/Content.md)
+### [Documentation](https://github.com/aojeda/headModel/blob/master/doc/Documentation.md)
