@@ -13,7 +13,7 @@ Input arguments:
 
 * `EEG`: EEGLAB's structure with nonempty `EEG.chanlocs` structure.
 * `hmfile`: file path to the template head model on disk.
-* `conductivity`: conductivity of each layer of tissue, scalp, skull, brain. The default value is: `[0.33, 0.022, 0.33]` in S/m units.
+* `conductivity`: conductivity of each layer of tissue, scalp, skull, brain. The default value is: `[0.33, 0.022, 0.33]` in S/m units, which is based on [this](http://www.sciencedirect.com/science/article/pii/S016502700900497X) paper.
 * `orientation`: if true, computes the orientation free lead field, otherwise it constrain the dipoles to be normal to the cortical surface.
 
 Output:

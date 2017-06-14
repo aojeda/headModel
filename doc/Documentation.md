@@ -6,4 +6,4 @@
 - [Lead field computation](https://github.com/aojeda/headModel/blob/master/doc/lead_field.md)
 - [Estimate EEG distributed sources with LORETA](https://github.com/aojeda/headModel/blob/master/doc/loreta.md)
 - [Visualization](https://github.com/aojeda/headModel/blob/master/doc/visualization.md)
-- [How to cite the toolbox](https://github.com/aojeda/headModel/blob/master/doc/cite_us.md)
+- [How to cite this toolbox](https://github.com/aojeda/headModel/blob/master/doc/cite_us.md)
