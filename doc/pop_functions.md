@@ -39,3 +39,5 @@ Output arguments:
 * `EEG.etc.src.actFull`: a tensor of number of sources by `EEG.pnts` by `EEG.trials` that contains the source time series,
 * `EEG.etc.src.act`: same as `EEG.etc.src.actFull` but the first dimension is colapsed within ROIs that correspond to the atlas in the head model, resulting in a tensor of number of ROI by `EEG.pnts` by `EEG.trials`,
 * `EEG.etc.src.roi`: cell array of ROI labels. 
+
+[Back](https://github.com/aojeda/headModel/blob/master/doc/Documentation.md)
