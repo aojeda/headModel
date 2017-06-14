@@ -19,3 +19,5 @@ References:
 [4] Gramfort, A., Papadopoulo, T., Olivi, E., & Clerc, M. (2010). OpenMEEG: opensource software for quasistatic bioelectromagnetics. Biomedical Engineering Online, 9, 45. http://doi.org/10.1186/1475-925X-9-45
 
 [5] Pascual-Marqui, R. D., Michel, C. M., & Lehmann, D. (1994). Low resolution electromagnetic tomography: a new method for localizing electrical activity in the brain. International Journal of Psychophysiology, 18(1), 49–65. http://doi.org/10.1016/0167-8760(84)90014-X
+
+[Back](https://github.com/aojeda/headModel/blob/master/doc/Documentation.md)
