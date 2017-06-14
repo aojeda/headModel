@@ -6,7 +6,7 @@ The `headModel` toolbox is a collection of functions and resources, some re-pack
 * If you use the 5 cm^2 Desikan & Killiany atlas, cite the [Bainstorm](http://neuroimage.usc.edu/brainstorm/) toolbox [3]
 * If you compute the lead field, cite the  [OpenMEEG](https://openmeeg.github.io/) [4]
 * If you compute inverse solutions you can cite the original LORETA paper [5]
-* Finally, you can cite this toolbox writing something as follows: "We have used routines from the `headModel` toolbox, which is open-source and can be freely downloaded from https://github.com/aojeda/headModel."
+* Finally, you can cite this toolbox writing something like the following: "We have used routines from the `headModel` toolbox, which is open-source and can be freely downloaded from https://github.com/aojeda/headModel."
 
 References:
  
