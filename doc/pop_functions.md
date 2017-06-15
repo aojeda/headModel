@@ -17,7 +17,7 @@ Input arguments:
 * `orientation`: if true, computes the orientation free lead field, otherwise it constrain the dipoles to be normal to the cortical surface.
 
 Output:
-`EEG.etc.src.hmfile`: pointer to the head model file (usually located next to the *.set* file) containing the computed forward model.
+`EEG`: EEGLAB's structure where `EEG.etc.src.hmfile` points to the saved head model file (usually located next to the *.set* file) containing the computed forward model.
 
 This function may or maynot pop up a GUI depending on whether the coregistration process is needed. Learn more about coregistration [here]((https://github.com/aojeda/headModel/blob/master/doc/coregistration.md)).
 
