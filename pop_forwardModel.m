@@ -26,6 +26,21 @@ if nargin < 3, orientation = true;end
 hm = headModel.loadFromFile(hmfile);
 labels = {EEG.chanlocs.labels};
 xyz = [[EEG.chanlocs.X]' [EEG.chanlocs.Y]' [EEG.chanlocs.Z]'];
+if length(labels) ~= size(xyz,1)
+    % Some channels are missing their location
+    labels = cell(EEG.nbchan,1);
+    xyz = zeros(EEG.nbchan,3);
+    for k=1:EEG.nbchan
+        labels{k} = EEG.chanlocs(k).labels;
+        if ~isempty(EEG.chanlocs(k).X)
+            xyz(k,:) = [EEG.chanlocs(k).X, EEG.chanlocs(k).Y, EEG.chanlocs(k).Z];
+        end
+    end
+    rmthis = find(sum(xyz,2)==0);
+    xyz(rmthis,:) = [];
+    labels(rmthis) = [];
+    EEG = pop_select(EEG,'nochannel',rmthis);
+end
 
 [~,~,loc2] = intersect(labels,hm.labels,'stable');
 if length(labels) == length(loc2)
