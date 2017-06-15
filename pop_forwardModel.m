@@ -42,7 +42,7 @@ if length(labels) ~= size(xyz,1)
     EEG = pop_select(EEG,'nochannel',rmthis);
 end
 
-[~,~,loc2] = intersect(labels,hm.labels,'stable');
+[~,~,loc2] = intersect(lower(labels),lower(hm.labels),'stable');
 if length(labels) == length(loc2)
     hm.labels = labels;
     hm.channelSpace = hm.channelSpace(loc2,:);
