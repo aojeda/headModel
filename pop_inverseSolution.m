@@ -1,5 +1,5 @@
 function EEG = pop_inverseSolution(EEG, windowSize, saveFull)
-if nargin < 2, windowSize=min([64,round(EEG.srate/8)]);end
+if nargin < 2, windowSize=min([64,2*round(EEG.srate/16)]);end
 if nargin < 3, saveFull = true;end
 windowSize=min([64,windowSize]);
 smoothing = hann(windowSize);
@@ -9,7 +9,8 @@ smoothing = smoothing(1:windowSize/2)';
 try
     hm = headModel.loadFromFile(EEG.etc.src.hmfile);
 catch
-    errordlg('EEG.etc.src.hmfile seems to be corrupted or missing, to set it right next we will run >> EEG = pop_forwardModel(EEG)');
+    h = errordlg('EEG.etc.src.hmfile seems to be corrupted or missing, to set it right next we will run >> EEG = pop_forwardModel(EEG)');
+    waitfor(h);
     EEG = pop_forwardModel(EEG);
     try
         hm = headModel.loadFromFile(EEG.etc.src.hmfile);
@@ -55,7 +56,11 @@ for trial=1:EEG.trials
         loc = k:k+windowSize-1;
         loc(loc>EEG.pnts) = [];
         if isempty(loc), break;end
-        if length(loc) < windowSize, break;end
+        if length(loc) < windowSize, 
+            X(:,loc,trial) = solver.update(EEG.data(:,loc,trial));
+            X_roi(:,loc,trial) = P*X(:,loc,trial);
+            break;
+        end
         
         % Source estimation
         Xtmp = solver.update(EEG.data(:,loc,trial));
@@ -86,4 +91,6 @@ if saveFull
 else
     EEG.etc.src.actFull = [];
 end
+EEG.history = char(EEG.history,'EEG = pop_inverseSolution(EEG, windowSize, saveFull);');
+disp('The source estimates were saved in EEG.etc.src');
 end
