@@ -1,4 +1,4 @@
-function EEG = pop_forwardModel(EEG, hmfile, conductivity, orientation)
+function EEG = pop_forwardModel(EEG, hmfile, conductivity, orientation, recompute)
 % Input arguments:
 %       conductivity: conductivity of each layer of tissue, scalp - skull - brain,
 %                     default: 0.33-0.022-0.33 S/m. See [2, 3, 4] for details.
@@ -22,6 +22,7 @@ elseif ~exist(hmfile,'file')
 end
 if nargin < 2, conductivity = [0.33 0.022 0.33];end
 if nargin < 3, orientation = true;end
+if nargin < 4, recompute = true;end
 
 hm = headModel.loadFromFile(hmfile);
 labels = {EEG.chanlocs.labels};
@@ -42,25 +43,32 @@ if length(labels) ~= size(xyz,1)
     EEG = pop_select(EEG,'nochannel',rmthis);
 end
 
+[p,n] = fileparts(fullfile(EEG.filepath,EEG.filename));
+hmfile = fullfile(p,[n '_hm.mat']);
+
 [~,loc1,loc2] = intersect(lower(labels),lower(hm.labels),'stable');
 if length(labels) == length(loc2)
     hm.labels = labels;
     hm.channelSpace = hm.channelSpace(loc2,:);
+    if isempty(hm.channelSpace)
+        disp('Cannot coregister based on channel labels, will redurn now!');
+        return
+    end
     EEG = pop_select(EEG,'channel',loc1);
-    if ~isempty(hm.K), 
+    if ~isempty(hm.K)
         hm.K = hm.K(loc2,:);
     else
         hm.computeLeadFieldBEM(conductivity,orientation);
     end
-else
+elseif ~exist(hmfile,'file') || recompute
     hm.coregister(xyz, labels);
+elseif exist(hmfile,'file')
+    hm = headModel.loadFromFile(hmfile);
 end
 
 % Save the forward model
-if ~isempty(hm.channelSpace)
-    [p,n] = fileparts(fullfile(EEG.filepath,EEG.filename));
-    hmfile = fullfile(p,[n '_hm.mat']);
-    hm.saveToFile(hmfile);
-    EEG.etc.src.hmfile = hmfile;
-    disp('The forward model was saved in EEG.etc.src')
+hm.saveToFile(hmfile);
+EEG.etc.src.hmfile = hmfile;
+EEG.history = char(EEG.history,'EEG = pop_forwardModel(EEG, hmfile, conductivity, orientation, recompute);');
+disp('The forward model was saved in EEG.etc.src')
 end
