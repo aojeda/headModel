@@ -3,8 +3,6 @@
 
 The headModel  toolbox for MATLAB/[EEGLAB](https://sccn.ucsd.edu/eeglab/) is a collection of routines, encapsulated in the `headModel` class, that are commonly used for solving the forward and inverse problems of the EEG.
 
-*Note: I am adding documentation as my time allows, so, feel free to contact me should you have any question.*
-
 ### Why another forward/inverse problem toolbox?
 The `headModel` toolbox was built out of frustration. With some exceptions, it is often cumbersome to get up and running with distributed source analysis of EEG data in MATLAB.
 
