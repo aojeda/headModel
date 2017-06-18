@@ -10,12 +10,12 @@ Learn more in the page for [Coregistration](https://github.com/aojeda/headModel/
 See the documentation for `pop_forwardModel` [here](https://github.com/aojeda/headModel/blob/master/doc/pop_functions.md)
 
 ### Inverse source estimation (LORETA)
-This option calls the `pop_inverseSolution` function for performing source reconstruction using the LORETA method (see more in the method's official documentation [here](http://www.uzh.ch/keyinst/loreta.htm) and also check out our page [here](https://github.com/aojeda/headModel/blob/master/doc/loreta.md)).
+This option calls the `pop_inverseSolution` function for performing source reconstruction using the LORETA (see it's official documentation [here](http://www.uzh.ch/keyinst/loreta.htm)).
 
-Source estimation is performed on non-overlaping and consecutive segments of data, trial by trial, thus resulting in a tensor of number of sources (vertices in the cortical surface of the head model) by time points by trials. The results are stored in the `EEG.etc.src`, which will contain the following fields:
+Source estimation is performed on non-overlaping and consecutive segments of data, trial by trial, thus resulting in a tensor of number of sources (vertices in the cortical surface of the head model) by time points by trials. This approach was recently validated, in the context of BCI applications, in [this](https://www.ncbi.nlm.nih.gov/pubmed/26415149) paper and elsewhere. The results are stored in the `EEG.etc.src`, which contains the following fields:
 
 * `actFull`: a tensor of number of sources by `EEG.pnts` by `EEG.trials` that contains the source time series,
-* `act`: same as `actFull` but the first dimension is colapsed within ROIs (regions of interest) that correspond to the atlas in the head model, resulting in a tensor of number of ROI by `EEG.pnts` by `EEG.trials` that contains the source time series per ROI,
+* `act`: same as `actFull` but the first dimension is collapsed within ROIs (regions of interest) that correspond to the atlas in the head model, resulting in a tensor of number of ROI by `EEG.pnts` by `EEG.trials` that contains the source time series per ROI,
 * `roi`: cell array of ROI labels. 
 
 See the documentation for `pop_inverseSolution` [here](https://github.com/aojeda/headModel/blob/master/doc/pop_functions.md)
