@@ -573,7 +573,7 @@ function help_Callback(hObject, eventdata, handles)
 % hObject    handle to help (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-web('https://github.com/aojeda/headModel', '-browser')
+web('https://github.com/aojeda/headModel/blob/master/doc/coregistration.md', '-browser')
 
 
 % --- Executes on scroll wheel click while the figure is in focus.

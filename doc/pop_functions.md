@@ -19,10 +19,10 @@ Input arguments:
 Output:
 `EEG`: EEGLAB's structure where `EEG.etc.src.hmfile` points to the saved head model file (usually located next to the *.set* file) containing the computed forward model.
 
-This function may or may not pop up a GUI depending on whether the coregistration process is needed. Learn more about coregistration [here]((https://github.com/aojeda/headModel/blob/master/doc/coregistration.md)).
+This function may or may not pop up a GUI depending on whether the co-registration process is needed. Learn more about co-registration [here]((https://github.com/aojeda/headModel/blob/master/doc/coregistration.md)).
 
 #### `pop_inverseSolution`
-Use this function for performing the distributed source estimation of non-overlapping and consecutive segments of EEG data, trial by trial using the LORETA inverse method. See more about LORETA in its official documentation page [here](http://www.uzh.ch/keyinst/loreta.htm) and also check out our page [here](https://github.com/aojeda/headModel/blob/master/doc/loreta.md).
+Use this function for performing the distributed source estimation of non-overlapping and consecutive segments of EEG data, trial by trial using the LORETA inverse method. See more about LORETA in its official documentation page [here](http://www.uzh.ch/keyinst/loreta.htm).
 
 ```matlab
 EEG = pop_inverseSolution(EEG, windowSize, saveFull);
@@ -40,6 +40,6 @@ Output arguments:
 * `EEG.etc.src.act`: same as `EEG.etc.src.actFull` but the first dimension is colapsed within ROIs that correspond to the atlas in the head model, resulting in a tensor of number of ROI by `EEG.pnts` by `EEG.trials`,
 * `EEG.etc.src.roi`: cell array of ROI labels. 
 
-See [this](https://github.com/aojeda/headModel/blob/master/doc/visualization.md) hack for how to visualize `EEG.etc.src.act` with `pop_erpimage`.
+See [these](https://github.com/aojeda/headModel/blob/master/doc/visualization.md) hacks for how to visualize the source estimates.
 
 [Back](https://github.com/aojeda/headModel/blob/master/doc/Documentation.md)
