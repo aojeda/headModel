@@ -3,7 +3,10 @@
 #### Use `pop_erpimage` to visualize ROI source data
 Suppose that you have used `pop_inverseSolution` to estimate the distributed cortical sources of epoched EEG data. In addition, suppose that you are interested in an ERP that may be around the Supplementary Motor Area (SMA) and want to show a panel with the cortical map that corresponds to the point of maximum negativity, within the first 100 ms, of the source ERP in the SMA. We can use `pop_erpimage` as follows:
 ```matlab
-% Get a new EEG structure
+% Load the headModel object
+hm = headModel.loadFromFile(EEG.etc.src.hmfile);
+
+% Create a new EEG structure
 EEG1 = EEG;
 
 % Overwrite the data field with the source data
