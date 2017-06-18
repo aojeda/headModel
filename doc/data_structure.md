@@ -1,7 +1,7 @@
-## Data structure and file format
+## Data structure
 In this toolbox we make extensive use of [MATLAB's object oriented programming language](https://www.mathworks.com/discovery/object-oriented-programming.html), which allows us to encapsulate the data (properties) and functions that utilize that data (methods) into a single high-level  interface, the `headModel` class. We find this convenient as the user only needs to learn that one interface, abstracting away much of the complexity inherent to surface handling, coregistration, and data curation. 
 
-The `headModel` class iherits from MATLAB's [`handle`](https://www.mathworks.com/help/matlab/handle-classes.html) class, that means that by assigning an object of this class to a variable, you are assigning a pointer, as opposed to creating another object. Be careful because if you modify the content of the object, the change will affect other objects that may point to it. To prevent this from happening, you can simply construct (or load) as many `headModel` objects as you need (see example below).
+The `headModel` class iherits from MATLAB's [`handle`](https://www.mathworks.com/help/matlab/handle-classes.html) class, that means that by assigning an object of this class to a variable, you are assigning a pointer, as opposed to creating another object. Be careful because if you modify the content of the object, the change will affect other objects that may point to the same data. To prevent this from happening, you can simply construct (or load) as many `headModel` objects as you need (see example below).
 
 The `headModel` class has the following proporties:
 
