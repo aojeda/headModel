@@ -1,4 +1,4 @@
-## Visualization
+## Visualization & Interpretation
 In this section, we describe how to visualize EEG source estimates computed by LORETA. First, we want to point out that **caution must be exercised** when interpreting LORETA source maps, specially on single-trials, because this method tends to over-estimate the spatial extent of the sources (sometimes too spatially smooth), as it does not incorporates any sparsity constraint. These issues are well documented in the neuroimaging literature and are not discussed further here. To ease the interpretation of this type of source maps, we recommend the use of `t-test` images, which can be straightforwardly computed from the single trial estimates. Then, you can use a multiple comparison method to calculate a significance threshold and discard the non-significant sources.
 
 For users accustomed to working with independence components, keep in mind that LORETA estimates generaly reflect, in a single cortical map, the contribution of several sources to the scalp EEG, as LORETA alone cannot separate independent components. Although we provide ROI-collapsed source time series in `EEG.etc.src.act`, these should be considered an approximation and no independence can be claimed. See [here](https://www.ncbi.nlm.nih.gov/pubmed/19378278) a more sophisticated method that can deal with source estimation subject to smoothness and independence constraints.
@@ -41,7 +41,7 @@ ERP_src_roi = mean(EEG.etc.src.act,3);
 % Compute the source ERP on the whole cortical space
 ERP_src_cortex = mean(EEG.etc.src.actFull, 3);
 
-% Find the iniced of the first 100 ms
+% Find the indices of the first 100 ms
 ind_100ms = find(EEG1.times>0 & EEG1.times<100);
 
 % Find the index of the maximum negativity within the first 100 ms for the ROI that is relevant to us
@@ -100,6 +100,8 @@ Use the custom toolbar section on the right to interact with the figure
 
 Click on the `topography` icon to switch the visualization to the topography
 ![topo_map](https://github.com/aojeda/headModel/blob/master/doc/assets/topo_map.png)
+
+Use the `+`/`-`  keys on your keyboard to tune the extrapolation of the sensor data on the head.
 
 [Back](https://github.com/aojeda/headModel/blob/master/doc/Documentation.md)
 

@@ -1,5 +1,14 @@
 ## Command-line interface to EEGLAB
-Below we describe the two pop functions that can work with EEGLAB's `EEG` structure.
+In this section, we describe the two pop functions that can work with EEGLAB's `EEG` structure. First, we say a word about pre-processing.
+
+#### Pre-processing
+As with any signal processing method, the pre-processing we do before computing the forward and inverse solutions is critical and can make the difference between estimating source maps with physiologic relevance or implausible ones. We do not set in stone THE pre-processing pipeline that you should use, as that may be application and data dependent, rather we give guidelines on what transformations your `EEG` structure should go through before using `pop_forwardModel` or `pop_inverseSolution`:
+
+* Remove DC component from each channel, this can be accomplished by applying a low-pass filter, removing the mean, or detrending the data.
+* Remove bad channels.
+* Remove non-EEG channels such as EOG or EMG (on the face or neck) as these may have significantly higher amplitude than EEG channels and may bias LORETA towards solutions that explain eye or muscle activity rather than brain.
+* Identifying eye blinks and other artifactual components with ICA and projecting those out of the EEG data usually works well before LORETA. 
+* Remove the average reference i.e. `EEG = pop_reref( EEG, [])`. This should be one of your last pre-processing steps as, internally, `pop_inverseSolution` removes the average reference from the lead field matrix and we need the lead field and the data to be referenced in the same way for the forward model to be valid. 
 
 #### `pop_forwardModel`
 Use this function to: 
@@ -22,7 +31,7 @@ Output:
 This function may or may not pop up a GUI depending on whether the co-registration process is needed. Learn more about co-registration [here]((https://github.com/aojeda/headModel/blob/master/doc/coregistration.md)).
 
 #### `pop_inverseSolution`
-Use this function for performing the distributed source estimation of non-overlapping and consecutive segments of EEG data, trial by trial using the LORETA inverse method. See more about LORETA in its official documentation page [here](http://www.uzh.ch/keyinst/loreta.htm).
+Use this function for performing the distributed source estimation of non-overlapping and consecutive segments of EEG data, trial by trial using the LORETA inverse method. We have validated this approach, in the context of BCI applications, in [this](https://www.ncbi.nlm.nih.gov/pubmed/26415149) paper. See more about LORETA in its official documentation page [here](http://www.uzh.ch/keyinst/loreta.htm).
 
 ```matlab
 EEG = pop_inverseSolution(EEG, windowSize, saveFull);
