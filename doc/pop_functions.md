@@ -28,7 +28,7 @@ Input arguments:
 Output:
 `EEG`: EEGLAB's structure where `EEG.etc.src.hmfile` points to the saved head model file (usually located next to the *.set* file) containing the computed forward model.
 
-This function may or may not pop up a GUI depending on whether the co-registration process is needed. Learn more about co-registration [here]((https://github.com/aojeda/headModel/blob/master/doc/coregistration.md)).
+This function may or may not pop up a GUI depending on whether the co-registration process is needed. Learn more about co-registration [here](https://github.com/aojeda/headModel/blob/master/doc/coregistration.md).
 
 #### `pop_inverseSolution`
 Use this function for performing the distributed source estimation of non-overlapping and consecutive segments of EEG data, trial by trial using the LORETA inverse method. We have validated this approach, in the context of BCI applications, in [this](https://www.ncbi.nlm.nih.gov/pubmed/26415149) paper. See more about LORETA in its official documentation page [here](http://www.uzh.ch/keyinst/loreta.htm).
