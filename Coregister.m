@@ -22,7 +22,7 @@ function varargout = Coregister(varargin)
 
 % Edit the above text to modify the response to help Coregister
 
-% Last Modified by GUIDE v2.5 31-May-2017 12:44:34
+% Last Modified by GUIDE v2.5 22-Jun-2017 00:46:16
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -101,21 +101,29 @@ function varargout = Coregister_OutputFcn(hObject, eventdata, handles)
 
 % Get default command line output from handles structure
 varargout{1} = handles.output;
-set(findjobj(handles.t_minus_x),'MouseWheelMovedCallback',{@t_minus_x_Callback,handles})
-set(findjobj(handles.t_minus_y),'MouseWheelMovedCallback',{@t_minus_y_Callback,handles})
-set(findjobj(handles.t_minus_z),'MouseWheelMovedCallback',{@t_minus_z_Callback,handles})
-set(findjobj(handles.t_plus_x),'MouseWheelMovedCallback',{@t_plus_x_Callback,handles})
-set(findjobj(handles.t_plus_y),'MouseWheelMovedCallback',{@t_plus_y_Callback,handles})
-set(findjobj(handles.t_plus_z),'MouseWheelMovedCallback',{@t_plus_z_Callback,handles})
-set(findjobj(handles.s_minus_x),'MouseWheelMovedCallback',{@s_minus_x_Callback,handles})
-set(findjobj(handles.s_minus_y),'MouseWheelMovedCallback',{@s_minus_y_Callback,handles})
-set(findjobj(handles.s_minus_z),'MouseWheelMovedCallback',{@s_minus_z_Callback,handles})
-set(findjobj(handles.r_minus_x),'MouseWheelMovedCallback',{@r_minus_x_Callback,handles})
-set(findjobj(handles.r_minus_y),'MouseWheelMovedCallback',{@r_minus_y_Callback,handles})
-set(findjobj(handles.r_minus_z),'MouseWheelMovedCallback',{@r_minus_z_Callback,handles})
-set(findjobj(handles.r_plus_x),'MouseWheelMovedCallback',{@r_plus_x_Callback,handles})
-set(findjobj(handles.r_plus_y),'MouseWheelMovedCallback',{@r_plus_y_Callback,handles})
-set(findjobj(handles.r_plus_z),'MouseWheelMovedCallback',{@r_plus_z_Callback,handles})
+try
+    set(findjobj(handles.t_minus_x),'MouseWheelMovedCallback',{@t_minus_x_Callback,handles})
+    set(findjobj(handles.t_minus_y),'MouseWheelMovedCallback',{@t_minus_y_Callback,handles})
+    set(findjobj(handles.t_minus_z),'MouseWheelMovedCallback',{@t_minus_z_Callback,handles})
+    set(findjobj(handles.t_plus_x),'MouseWheelMovedCallback',{@t_plus_x_Callback,handles})
+    set(findjobj(handles.t_plus_y),'MouseWheelMovedCallback',{@t_plus_y_Callback,handles})
+    set(findjobj(handles.t_plus_z),'MouseWheelMovedCallback',{@t_plus_z_Callback,handles})
+    set(findjobj(handles.s_minus_x),'MouseWheelMovedCallback',{@s_minus_x_Callback,handles})
+    set(findjobj(handles.s_minus_y),'MouseWheelMovedCallback',{@s_minus_y_Callback,handles})
+    set(findjobj(handles.s_minus_z),'MouseWheelMovedCallback',{@s_minus_z_Callback,handles})
+    set(findjobj(handles.s_plus_x),'MouseWheelMovedCallback',{@s_plus_x_Callback,handles})
+    set(findjobj(handles.s_plus_y),'MouseWheelMovedCallback',{@s_plus_y_Callback,handles})
+    set(findjobj(handles.s_plus_z),'MouseWheelMovedCallback',{@s_plus_z_Callback,handles})
+    set(findjobj(handles.r_minus_x),'MouseWheelMovedCallback',{@r_minus_x_Callback,handles})
+    set(findjobj(handles.r_minus_y),'MouseWheelMovedCallback',{@r_minus_y_Callback,handles})
+    set(findjobj(handles.r_minus_z),'MouseWheelMovedCallback',{@r_minus_z_Callback,handles})
+    set(findjobj(handles.r_plus_x),'MouseWheelMovedCallback',{@r_plus_x_Callback,handles})
+    set(findjobj(handles.r_plus_y),'MouseWheelMovedCallback',{@r_plus_y_Callback,handles})
+    set(findjobj(handles.r_plus_z),'MouseWheelMovedCallback',{@r_plus_z_Callback,handles})
+catch ME
+    fprintf('An error has happened with message: %s\n',ME.message)
+    fprintf('Your system configuration apparently does not support the MouseWheelMovedCallback callback.\nDo not worry, we will move on without that functionality.\n')
+end
 
 
 % --- Executes on button press in Project.
@@ -583,4 +591,3 @@ function coregister_WindowScrollWheelFcn(hObject, eventdata, handles)
 %	VerticalScrollCount: signed integer indicating direction and number of clicks
 %	VerticalScrollAmount: number of lines scrolled for each click
 % handles    structure with handles and user data (see GUIDATA)
-
