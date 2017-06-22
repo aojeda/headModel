@@ -43,6 +43,11 @@ P = solver.hm.indices4Structure(solver.hm.atlas.label);
 P = double(P);
 P = bsxfun(@rdivide,P, sum(P))';
 
+% Check if we need to integrate over Jx, Jy, Jz components
+if solver.Nx == size(hm.cortex.vertices,1)*3
+    P = [P P P];
+end
+
 % Perform source estimation
 disp('LORETA source estimation...')
 
