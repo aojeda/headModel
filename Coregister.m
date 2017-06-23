@@ -87,7 +87,7 @@ handles.output = handles.coregister;
 
 % Update handles structure
 guidata(hObject, handles);
-
+uiwait(handles.coregister);
 % UIWAIT makes Coregister wait for user response (see UIRESUME)
 % uiwait(handles.coregister);
 
@@ -100,7 +100,12 @@ function varargout = Coregister_OutputFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Get default command line output from handles structure
-varargout{1} = handles.output;
+if ~isempty(handles)
+    varargout{1} = handles.output;
+else
+    varargout{1} = [];
+    return;
+end
 try
     set(findjobj(handles.t_minus_x),'MouseWheelMovedCallback',{@t_minus_x_Callback,handles})
     set(findjobj(handles.t_minus_y),'MouseWheelMovedCallback',{@t_minus_y_Callback,handles})
@@ -120,9 +125,6 @@ try
     set(findjobj(handles.r_plus_x),'MouseWheelMovedCallback',{@r_plus_x_Callback,handles})
     set(findjobj(handles.r_plus_y),'MouseWheelMovedCallback',{@r_plus_y_Callback,handles})
     set(findjobj(handles.r_plus_z),'MouseWheelMovedCallback',{@r_plus_z_Callback,handles})
-catch ME
-    fprintf('An error has happened with message: %s\n',ME.message)
-    fprintf('Your system configuration apparently does not support the MouseWheelMovedCallback callback.\nDo not worry, we will move on without that functionality.\n')
 end
 
 
@@ -531,13 +533,19 @@ answer = inputdlg(prompt,dlg_title,num_lines,defaultans);
 if isempty(answer), return;end
 cond = cellfun(@str2double,answer(1:3));
 orientation = ~strcmpi(answer{4},'off');
-set(handles.coregister, 'pointer', 'watch');
-drawnow;
-handles.hm.computeLeadFieldBEM(cond,orientation);
-set(handles.coregister, 'pointer', 'arrow');
-drawnow;
-delete(handles.coregister);
-
+try
+    set(handles.coregister, 'pointer', 'watch');
+    drawnow;
+    handles.hm.computeLeadFieldBEM(cond,orientation);
+    set(handles.coregister, 'pointer', 'arrow');
+    drawnow;
+    delete(handles.coregister);
+catch ME
+    handles.hm.labels = ME;
+    set(handles.coregister, 'pointer', 'arrow');
+    drawnow;
+    delete(handles.coregister);
+end
 
 % --- Executes on button press in cancel.
 function cancel_Callback(hObject, eventdata, handles)

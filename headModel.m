@@ -179,11 +179,11 @@ classdef headModel < handle
             if ~isempty(loc2)
                 Aff = geometricTools.affineMapping(xyz(loc1,:),obj.channelSpace(loc2,:));
                 xyz = geometricTools.applyAffineMapping(xyz,Aff);
-                fig = Coregister(obj,xyz, labels);
-                uiwait(fig);
-            else
-                fig = Coregister(obj,xyz, labels);
-                uiwait(fig);
+            end
+            Coregister(obj,xyz, labels);
+            if isa(obj.labels,'MException')
+            	ME = obj.labels;
+                ME.rethrow;
             end
         end
         function warpTemplate(obj,templateObj, regType)
@@ -328,7 +328,7 @@ classdef headModel < handle
             status = system('which om_assemble');
             existOM = ~status;
             if ~existOM
-                error('OpenMEEG is not intalled. Please download and install the sources you need from https://gforge.inria.fr/frs/?group_id=435.');
+                error('OpenMEEG:NoInstalled','OpenMEEG is not intalled in your system.\nClick on the link to download and install <a href="https://gforge.inria.fr/frs/?group_id=435">OpenMEEG</a>.');
             end
             rootDir = tempdir;
             binDir = fileparts(which('libmatio.a'));

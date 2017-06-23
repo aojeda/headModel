@@ -4,7 +4,7 @@ function EEG = pop_forwardModel(EEG, hmfile, conductivity, orientation, recomput
 %                     default: 0.33-0.022-0.33 S/m. See [2, 3, 4] for details.
 %        orientation: if true, computes the orientation free lead field, otherwise
 %                     it constrain the dipoles to be normal to the cortical surface
-            
+
 if isempty(EEG.chanlocs)
     error('Empty EEG.chanlocs, you must load your electrode positions first.');
 end
@@ -47,28 +47,38 @@ end
 hmfile = fullfile(p,[n '_hm.mat']);
 
 [~,loc1,loc2] = intersect(lower(labels),lower(hm.labels),'stable');
-if length(labels) == length(loc2)
-    hm.labels = labels;
-    hm.channelSpace = hm.channelSpace(loc2,:);
-    if isempty(hm.channelSpace)
-        disp('Cannot coregister based on channel labels, will redurn now!');
-        return
+try
+    if length(labels) == length(loc2)
+        hm.labels = labels;
+        hm.channelSpace = hm.channelSpace(loc2,:);
+        if isempty(hm.channelSpace)
+            disp('Cannot coregister based on channel labels, will redurn now!');
+            return
+        end
+        EEG = pop_select(EEG,'channel',loc1);
+        if ~isempty(hm.K)
+            disp('Using pre-computed lead field matrix.')
+            hm.K = hm.K(loc2,:);
+        else
+            hm.computeLeadFieldBEM(conductivity,orientation);
+        end
+    elseif ~exist(hmfile,'file') || recompute
+        hm.coregister(xyz, labels);
+    elseif exist(hmfile,'file')
+        hm = headModel.loadFromFile(hmfile);
     end
-    EEG = pop_select(EEG,'channel',loc1);
-    if ~isempty(hm.K)
-        hm.K = hm.K(loc2,:);
+    
+    % Save the forward model
+    hm.saveToFile(hmfile);
+    EEG.etc.src.hmfile = hmfile;
+    EEG.history = char(EEG.history,'EEG = pop_forwardModel(EEG, hmfile, conductivity, orientation, recompute);');
+    disp('The forward model was saved in EEG.etc.src')
+catch ME
+    if strcmp(ME.identifier,'OpenMEEG:NoInstalled')
+        disp(ME.message)
     else
-        hm.computeLeadFieldBEM(conductivity,orientation);
+        e = errordlg(ME.message);
+        uiwait(e);
     end
-elseif ~exist(hmfile,'file') || recompute
-    hm.coregister(xyz, labels);
-elseif exist(hmfile,'file')
-    hm = headModel.loadFromFile(hmfile);
 end
-
-% Save the forward model
-hm.saveToFile(hmfile);
-EEG.etc.src.hmfile = hmfile;
-EEG.history = char(EEG.history,'EEG = pop_forwardModel(EEG, hmfile, conductivity, orientation, recompute);');
-disp('The forward model was saved in EEG.etc.src')
 end
