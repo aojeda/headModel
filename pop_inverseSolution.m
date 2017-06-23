@@ -1,7 +1,8 @@
-function EEG = pop_inverseSolution(EEG, windowSize, saveFull)
-if nargin < 2, windowSize=min([64,2*round(EEG.srate/16)]);end
+function EEG = pop_inverseSolution(EEG, windowSize, saveFull, solverType)
+if nargin < 2, windowSize=min([16,2*round(EEG.srate/16)]);end
 if nargin < 3, saveFull = true;end
-windowSize=min([64,windowSize]);
+if nargin < 4, solverType = 'loreta';end
+windowSize=min([16,windowSize]);
 smoothing = hann(windowSize);
 smoothing = smoothing(1:windowSize/2)';
 
@@ -26,7 +27,21 @@ labels_eeg = {EEG.chanlocs.labels};
 EEG = pop_select(EEG,'channel',loc);
                     
 % Initialize the LORETA solver
-solver = WMNInverseSolver(hm);
+sc = 1;
+switch lower(solverType)
+    case 'loreta'
+        solver = invSol.loreta(hm);
+    case 'bsbl'
+        solver = invSol.bsbl(hm);
+        sc = max(abs(EEG.data(:)))/1000;
+        EEG.data = EEG.data/sc;
+    case 'peb_l2'
+        solver = invSol.peb_l2(hm);
+        sc = max(abs(EEG.data(:)))/1000;
+        EEG.data = EEG.data/sc;
+    otherwise
+        solver = invSol.loreta(hm);
+end
 
 Nroi = length(hm.atlas.label);
 try
@@ -34,12 +49,12 @@ try
 catch ME
     disp(ME.message)
     disp('Using a LargeTensor object...')
-    X = LargeTensor([solver.Nx, EEG.pnts, EEG.trials]);
+    X = invSol.LargeTensor([solver.Nx, EEG.pnts, EEG.trials]);
 end             
 X_roi = zeros(Nroi, EEG.pnts, EEG.trials);
 
 % Construct the average ROI operator
-P = solver.hm.indices4Structure(solver.hm.atlas.label);
+P = hm.indices4Structure(hm.atlas.label);
 P = double(P);
 P = bsxfun(@rdivide,P, sum(P))';
 
@@ -49,14 +64,14 @@ if solver.Nx == size(hm.cortex.vertices,1)*3
 end
 
 % Perform source estimation
-disp('LORETA source estimation...')
+fprintf('%s source estimation...\n',upper(solverType));
 
 prc_5 = round(linspace(1,EEG.pnts,30));
 iterations = 1:windowSize/2:EEG.pnts-windowSize;
 prc_10 = iterations(round(linspace(1,length(iterations),10)));
 
 for trial=1:EEG.trials
-    fprintf('\nProcessing trial %i of %i: ',trial, EEG.trials);
+    fprintf('Processing trial %i of %i: ',trial, EEG.trials);
     for k=1:windowSize/2:EEG.pnts
         loc = k:k+windowSize-1;
         loc(loc>EEG.pnts) = [];
@@ -87,12 +102,15 @@ for trial=1:EEG.trials
         prc = find(prc_10==k);
         if ~isempty(prc), fprintf('%i%%',prc*10);end
     end
+    fprintf('\n');
 end
-fprintf(' done!\n');
+fprintf('Done!\n');
 EEG.etc.src.act = X_roi;
 EEG.etc.src.roi = hm.atlas.label;
+EEG.data = EEG.data*sc;
+EEG.etc.src.act = EEG.etc.src.act*sc;
 if saveFull
-    EEG.etc.src.actFull = X;
+    EEG.etc.src.actFull = X*sc;
 else
     EEG.etc.src.actFull = [];
 end

@@ -1,4 +1,4 @@
-classdef WMNInverseSolver < handle
+classdef loreta < handle
     % Estimate EEG distributed sourses using a weighted minimum norm
     % solver.
     properties
@@ -14,7 +14,7 @@ classdef WMNInverseSolver < handle
         hm
     end
     methods
-        function obj = WMNInverseSolver(hm, W)
+        function obj = loreta(hm, W)
             if nargin < 2, W = hm.L;end
             [obj.Ny, obj.Nx] = size(hm.K);
             % Remove from the source space the indiced that are not in the
@@ -35,7 +35,7 @@ classdef WMNInverseSolver < handle
             if nargin < 3, numLambdas = 100;end
             if nargin < 4, plotGCV = false;end
             X = zeros(obj.Nx, size(Y,2));
-            X(obj.srcind,:) = ridgeSVD(Y, obj.Ut, obj.s2, obj.V, numLambdas, plotGCV);
+            X(obj.srcind,:) = invSol.ridgeSVD(Y, obj.Ut, obj.s2, obj.V, numLambdas, plotGCV);
         end
     end
     methods(Static)

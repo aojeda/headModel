@@ -35,7 +35,6 @@ if nargin < 6, plotGCV = false;end
 p = size(V,1);
 s = sqrt(s2);
 UtY = Ut*Y;
-lambda2 = gcv_func(UtY,s,p,nlambda,plotGCV);
+lambda2 = invSol.gcv_func(UtY,s,p,nlambda,plotGCV);
 T = V*diag(s./(s2+lambda2))*Ut;
 J = T*Y;                            % J = (K'*K+lambda*L'*L)\K'*Y
-lambda2old = lambda2;
