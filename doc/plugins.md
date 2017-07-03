@@ -62,4 +62,5 @@ end
 
 MATLAB's [lassso](https://www.mathworks.com/help/stats/lasso.html) function has many options that can be incorporated into the wrapper class `inverseSolverLasso`, which could be of interest for EEG source estimation. 
 
-Feel free to reach out to me if you need any question.
+Feel free to reach out to me if you have any question.
+[Back](https://github.com/aojeda/headModel/blob/master/doc/Documentation.md)
