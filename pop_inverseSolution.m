@@ -25,22 +25,29 @@ end
 labels_eeg = {EEG.chanlocs.labels};
 [~,loc] = intersect(lower(labels_eeg), lower(hm.labels),'stable');
 EEG = pop_select(EEG,'channel',loc);
-                    
-% Initialize the LORETA solver
+       
+% Initialize the inverse solver
 sc = 1;
-switch lower(solverType)
-    case 'loreta'
-        solver = invSol.loreta(hm);
-    case 'bsbl'
-        solver = invSol.bsbl(hm);
+if strcmpi(solverType,'loreta')
+    solver = invSol.loreta(hm);
+else
+    % Search plugins folder
+    files = dir(fullfile(fileparts(which('headModel.m')),'plugins'));
+    plugins = {files.name};
+    isdir = [files.isdir];
+    plugins = plugins(~isdir);
+    for k=1:length(plugins), 
+        loc = strfind(plugins{k},'.m');
+        if ~isempty(loc), plugins{k} = plugins{k}(1:loc-1);end
+    end
+    ind = ismember(plugins,solverType);
+    if any(ind)
+        solver = feval(solverType,hm);
         sc = max(abs(EEG.data(:)))/1000;
         EEG.data = EEG.data/sc;
-    case 'peb_l2'
-        solver = invSol.peb_l2(hm);
-        sc = max(abs(EEG.data(:)))/1000;
-        EEG.data = EEG.data/sc;
-    otherwise
+    else
         solver = invSol.loreta(hm);
+    end
 end
 
 Nroi = length(hm.atlas.label);

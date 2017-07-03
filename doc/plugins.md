@@ -83,4 +83,5 @@ MATLAB's [lassso](https://www.mathworks.com/help/stats/lasso.html) function has 
 *Note that the example above is for demonstration purpose only, as MATLAB's `lasso` could be too slow for most applications. A faster `solver` can be implemented using ADMM (see code [here](http://www.simonlucey.com/lasso-using-admm/)).
 
 Feel free to reach out to me if you have any question.
+
 [Back](https://github.com/aojeda/headModel/blob/master/doc/Documentation.md)

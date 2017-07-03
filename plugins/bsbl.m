@@ -12,6 +12,7 @@ else
     model.options.peb.useGPU = false;
     model.options.lb.verbose = false;
     model.options.peb.verbose = false;
+    model.options.peb.maxIter = 50;
     obj = ParametricEmpiricalBayes(model);
 end
 end
