@@ -5,7 +5,7 @@ New inverse methods can be easily added by implementing an interface between you
 ```matlab
 function solver = solverName(hm)
 %
-% Your code goes here
+% Your wrapper code goes here
 %
 end
 ```
@@ -34,7 +34,7 @@ end
 Note that we do not need to implement the method `update` as it is already in the class `loreta`.
 
 ### Example 2: LASSO inverse solver
-In this example, we implement source estimation subject to sparsity constraints using L1 regularization (see the [LASSO](https://statweb.stanford.edu/~tibs/lasso/lasso.pdf) paper). Fortunately, there is a `lasso` solver implemented in MATLAB since R2011b, which we can use. 
+In this example, we implement source estimation subject to sparsity constraints using L1 regularization (see the [LASSO](https://statweb.stanford.edu/~tibs/lasso/lasso.pdf) paper). Fortunately, there is a [lasso](https://www.mathworks.com/help/stats/lasso.html) solver implemented in MATLAB since R2011b, which we can use. 
 
 First, we write the following interface function:
 ```matlab
@@ -70,7 +70,7 @@ classdef inverseSolverLasso < handle
                 [xtmp,stats] = lasso(obj.H, y(:,k));
                 
                 % Select model with lowest mean square error
-                [~, opt_model] = stats.MSE;
+                [~, opt_model] = min(stats.MSE);
                 x(:,k) = xtmp(:,opt_model);
             end
         end
@@ -80,8 +80,7 @@ end
 
 MATLAB's [lassso](https://www.mathworks.com/help/stats/lasso.html) function has many options that can be incorporated into the wrapper class `inverseSolverLasso`, which could be of interest for EEG source estimation. 
 
-*Note that the example above is for demonstration purpose only, as MATLAB's `lasso` could be too slow for most applications. A faster `solver` can be implemented using ADMM (see code [here](http://www.simonlucey.com/lasso-using-admm/)).
+*Note that the example above is for demonstration purpose only, as MATLAB's `lasso` could be too slow for most imaging applications. A faster solver can be implemented using ADMM (see code [here](http://www.simonlucey.com/lasso-using-admm/)).
 
-Feel free to reach out to me if you have any question.
 
 [Back](https://github.com/aojeda/headModel/blob/master/doc/Documentation.md)
