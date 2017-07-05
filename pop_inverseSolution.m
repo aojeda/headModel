@@ -4,7 +4,7 @@ if nargin < 3, saveFull = true;end
 if nargin < 4, solverType = 'loreta';end
 windowSize=min([16,windowSize]);
 smoothing = hann(windowSize);
-smoothing = smoothing(1:windowSize/2)';
+if windowSize > 1, smoothing = smoothing(1:windowSize/2)';end
 
 % Load the head model
 try
@@ -25,7 +25,7 @@ end
 labels_eeg = {EEG.chanlocs.labels};
 [~,loc] = intersect(lower(labels_eeg), lower(hm.labels),'stable');
 EEG = pop_select(EEG,'channel',loc);
-       
+
 % Initialize the inverse solver
 sc = 1;
 if strcmpi(solverType,'loreta')
@@ -36,7 +36,7 @@ else
     plugins = {files.name};
     isdir = [files.isdir];
     plugins = plugins(~isdir);
-    for k=1:length(plugins), 
+    for k=1:length(plugins),
         loc = strfind(plugins{k},'.m');
         if ~isempty(loc), plugins{k} = plugins{k}(1:loc-1);end
     end
@@ -57,7 +57,7 @@ catch ME
     disp(ME.message)
     disp('Using a LargeTensor object...')
     X = invSol.LargeTensor([solver.Nx, EEG.pnts, EEG.trials]);
-end             
+end
 X_roi = zeros(Nroi, EEG.pnts, EEG.trials);
 
 % Construct the average ROI operator
@@ -73,41 +73,49 @@ end
 % Perform source estimation
 fprintf('%s source estimation...\n',upper(solverType));
 
-prc_5 = round(linspace(1,EEG.pnts,30));
-iterations = 1:windowSize/2:EEG.pnts-windowSize;
-prc_10 = iterations(round(linspace(1,length(iterations),10)));
+if windowSize > 1
+    prc_5 = round(linspace(1,EEG.pnts,30));
+    iterations = 1:windowSize/2:EEG.pnts-windowSize;
+    prc_10 = iterations(round(linspace(1,length(iterations),10)));
+end
 
 for trial=1:EEG.trials
     fprintf('Processing trial %i of %i: ',trial, EEG.trials);
-    for k=1:windowSize/2:EEG.pnts
-        loc = k:k+windowSize-1;
-        loc(loc>EEG.pnts) = [];
-        if isempty(loc), break;end
-        if length(loc) < windowSize, 
-            X(:,loc,trial) = solver.update(EEG.data(:,loc,trial));
+    if windowSize > 1
+        for k=1:windowSize/2:EEG.pnts
+            loc = k:k+windowSize-1;
+            loc(loc>EEG.pnts) = [];
+            if isempty(loc), break;end
+            if length(loc) < windowSize,
+                X(:,loc,trial) = solver.update(EEG.data(:,loc,trial));
+                X_roi(:,loc,trial) = P*X(:,loc,trial);
+                break;
+            end
+            
+            % Source estimation
+            Xtmp = solver.update(EEG.data(:,loc,trial));
+            
+            % Stitch windows
+            if k>1
+                X(:,loc(1:end/2),trial) = bsxfun(@times, Xtmp(:,1:end/2), smoothing) + bsxfun(@times,X(:,loc(1:end/2),trial), 1-smoothing);
+                X(:,loc(end/2+1:end),trial) = Xtmp(:,end/2+1:end);
+            else
+                X(:,loc,trial) = Xtmp;
+            end
+            
+            % Compute average ROI time series
             X_roi(:,loc,trial) = P*X(:,loc,trial);
-            break;
+            
+            % Progress indicatior
+            [~,ind] = intersect(loc(end-windowSize/2:end),prc_5);
+            if ~isempty(ind), fprintf('.');end
+            prc = find(prc_10==k);
+            
         end
-        
-        % Source estimation
-        Xtmp = solver.update(EEG.data(:,loc,trial));
-        
-        % Stitch windows
-        if k>1
-            X(:,loc(1:end/2),trial) = bsxfun(@times, Xtmp(:,1:end/2), smoothing) + bsxfun(@times,X(:,loc(1:end/2),trial), 1-smoothing);
-            X(:,loc(end/2+1:end),trial) = Xtmp(:,end/2+1:end);
-        else
-            X(:,loc,trial) = Xtmp;
-        end
-        
-        % Compute average ROI time series
-        X_roi(:,loc,trial) = P*X(:,loc,trial);
-        
-        % Progress indicatior
-        [~,ind] = intersect(loc(end-windowSize/2:end),prc_5);
-        if ~isempty(ind), fprintf('.');end
-        prc = find(prc_10==k);
         if ~isempty(prc), fprintf('%i%%',prc*10);end
+    else
+        X(:,:,trial) = solver.update(EEG.data(:,:,trial));
+        X_roi(:,:,trial) = P*X(:,:,trial);
     end
     fprintf('\n');
 end

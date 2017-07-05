@@ -7,12 +7,13 @@ else
     Ny = size(hm.K,1);
     R = eye(Ny)-ones(Ny)/Ny;
     hm.K = R*hm.K;
-    model = ParametricEmpiricalBayes.makeObservationModel();
-    model.options.peb.maxIter = 0;
-    model.options.lb.verbose = false;
-    model.options.peb.verbose = false;
-    model.options.peb.useGPU = false;
-    model.hm = hm;
-    obj = ParametricEmpiricalBayes(model);
+    options = ParametricEmpiricalBayes.initOptions();
+    options.lb.maxTol = 1e-2;
+    options.peb.maxIter = 0;
+    options.lb.verbose = false;
+    options.peb.verbose = false;
+    options.peb.useGPU = false;
+    [PriorCov,sqrtPriorCov,blocks] = hm2cc(hm);
+    obj = ParametricEmpiricalBayes(hm, PriorCov,sqrtPriorCov,blocks, options);
 end
 end
