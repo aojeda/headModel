@@ -1,6 +1,7 @@
 % Defines the class headModel for solving forward/inverse problem of the EEG.
 %
-% Author: Alejandro Ojeda, Syntrogi Inc. 2015
+% Author: Alejandro Ojeda, Swartz Center for Computational Neuroscience, 
+%                           University of California San Diego
 
 classdef headModel < handle
     properties(GetAccess=public, SetAccess=public,SetObservable)
