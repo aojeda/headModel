@@ -107,12 +107,11 @@ for trial=1:EEG.trials
             X_roi(:,loc,trial) = P*X(:,loc,trial);
             
             % Progress indicatior
-            [~,ind] = intersect(loc(end-windowSize/2:end),prc_5);
+            [~,ind] = intersect(loc(1:windowSize/2),prc_5);
             if ~isempty(ind), fprintf('.');end
             prc = find(prc_10==k);
-            
+            if ~isempty(prc), fprintf('%i%%',prc*10);end
         end
-        if ~isempty(prc), fprintf('%i%%',prc*10);end
     else
         X(:,:,trial) = solver.update(EEG.data(:,:,trial));
         X_roi(:,:,trial) = P*X(:,:,trial);
