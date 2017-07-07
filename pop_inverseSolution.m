@@ -1,8 +1,8 @@
 function EEG = pop_inverseSolution(EEG, windowSize, saveFull, solverType)
-if nargin < 2, windowSize=min([16,2*round(EEG.srate/16)]);end
+if nargin < 2, windowSize= 16;end
 if nargin < 3, saveFull = true;end
 if nargin < 4, solverType = 'loreta';end
-windowSize=min([16,windowSize]);
+windowSize=max([1,windowSize]);
 smoothing = hann(windowSize);
 if windowSize > 1, smoothing = smoothing(1:windowSize/2)';end
 
