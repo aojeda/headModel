@@ -17,7 +17,7 @@ function x = update(obj, y)
 %
 end
 ```
-and contains the following properties: `Nx` (number of sources) and `Ny` (number of sensors).
+
 2- Save the function `solverName.m` in `headModel/plugins/`.
 
 *Note that the `plugins/` folder should contain **only** interface functions, class definitions must be somewhere else as third-party classes may not be specific to EEG source estimation and could be part of large toolboxes.
