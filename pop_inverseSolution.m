@@ -28,6 +28,8 @@ EEG = pop_select(EEG,'channel',loc);
 
 % Initialize the inverse solver
 sc = 1;
+Ndipoles = size(hm.cortex.vertices,1);
+Nx = size(hm.K,2);
 if strcmpi(solverType,'loreta')
     solver = invSol.loreta(hm);
 else
@@ -52,11 +54,11 @@ end
 
 Nroi = length(hm.atlas.label);
 try
-    X = zeros(solver.Nx, EEG.pnts, EEG.trials);
+    X = zeros(Nx, EEG.pnts, EEG.trials);
 catch ME
     disp(ME.message)
     disp('Using a LargeTensor object...')
-    X = invSol.LargeTensor([solver.Nx, EEG.pnts, EEG.trials]);
+    X = invSol.LargeTensor([Nx, EEG.pnts, EEG.trials]);
 end
 X_roi = zeros(Nroi, EEG.pnts, EEG.trials);
 
@@ -66,7 +68,7 @@ P = double(P);
 P = bsxfun(@rdivide,P, sum(P))';
 
 % Check if we need to integrate over Jx, Jy, Jz components
-if solver.Nx == size(hm.cortex.vertices,1)*3
+if Nx == Ndipoles*3
     P = [P P P];
 end
 
@@ -80,7 +82,7 @@ if windowSize > 1
 end
 
 for trial=1:EEG.trials
-    fprintf('Processing trial %i of %i: ',trial, EEG.trials);
+    fprintf('Processing trial %i of %i... ',trial, EEG.trials);
     if windowSize > 1
         for k=1:windowSize/2:EEG.pnts
             loc = k:k+windowSize-1;
