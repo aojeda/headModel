@@ -1,7 +1,23 @@
 function EEG = pop_inverseSolution(EEG, windowSize, saveFull, solverType)
-if nargin < 2, windowSize= 16;end
-if nargin < 3, saveFull = true;end
-if nargin < 4, solverType = 'loreta';end
+if nargin < 1, error('Not enough input arguments.');end
+if nargin < 4,
+    answer = inputdlg({'Input window size','Save full PCD', 'Input solver type'},'pop_inverseSolution',1,{'16','true', 'loreta'});
+    if isempty(answer)
+        error('Not enough input arguments.');
+    else
+        windowSize = str2double(answer{1});
+        if isempty(windowSize)
+            disp('Invalid input for windowSize parameter, we will use the default value.')
+            windowSize= 16;
+        end
+        saveFull = str2num(answer{2}); %#ok
+        if isempty(saveFull)
+            disp('Invalid input for saveFull parameter, we will use the default value.')
+            saveFull= true;
+        end
+        solverType = answer{3};
+    end
+end
 windowSize=max([1,windowSize]);
 smoothing = hann(windowSize);
 if windowSize > 1, smoothing = smoothing(1:windowSize/2)';end
@@ -81,6 +97,7 @@ if windowSize > 1
     prc_10 = iterations(round(linspace(1,length(iterations),10)));
 end
 
+logE = zeros(EEG.trials,1);
 for trial=1:EEG.trials
     fprintf('Processing trial %i of %i... ',trial, EEG.trials);
     if windowSize > 1
@@ -115,7 +132,11 @@ for trial=1:EEG.trials
             if ~isempty(prc), fprintf('%i%%',prc*10);end
         end
     else
-        X(:,:,trial) = solver.update(EEG.data(:,:,trial));
+        try
+            [X(:,:,trial),logE(trial)] = solver.update(EEG.data(:,:,trial));
+        catch
+            X(:,:,trial) = solver.update(EEG.data(:,:,trial));
+        end
         X_roi(:,:,trial) = P*X(:,:,trial);
     end
     fprintf('\n');
@@ -125,6 +146,9 @@ EEG.etc.src.act = X_roi;
 EEG.etc.src.roi = hm.atlas.label;
 EEG.data = EEG.data*sc;
 EEG.etc.src.act = EEG.etc.src.act*sc;
+if ~all(logE==0)
+    EEG.etc.src.logE = logE;
+end
 if saveFull
     EEG.etc.src.actFull = X*sc;
 else
