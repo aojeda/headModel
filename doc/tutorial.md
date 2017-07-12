@@ -36,7 +36,7 @@ fig = hm.plot();
 
 See more about `pop_forwardModel` [here](https://github.com/aojeda/headModel/blob/master/doc/pop_functions.md#pop_forwardmodel).
 
-Next, we proceed to estimate the EEG sources:
+Next, we proceed to estimate the EEG sources with [pop_inverseSolution](https://github.com/aojeda/headModel/blob/master/doc/pop_functions.md#pop_inversesolution):
 
 ```matlab
 windowSize = 16;  % set the number of consecutive samples used to estimate a chunk
@@ -48,12 +48,10 @@ solverType = 'loreta';  % set the inverse solution method
 % Estimate sources
 EEG = pop_inverseSolution(EEG, windowSize, saveFull, solverType)
 ```
-where the resulting `EEG` structure will have the sources stored in the ``EEG.etc.src`
+where the resulting `EEG` structure will have the sources stored in the `EEG.etc.src`
 structure.
 
-See [pop_inverseSolution](https://github.com/aojeda/headModel/blob/master/doc/pop_functions.md#pop_inversesolution) and
-[visualization](https://github.com/aojeda/headModel/blob/master/doc/visualization.md) pages
-for additional info.
+See the  [visualization](https://github.com/aojeda/headModel/blob/master/doc/visualization.md) page to learn how to plot your results.
 
 That's all folks, enjoy!
 
