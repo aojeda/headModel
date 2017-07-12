@@ -99,7 +99,7 @@ end
 
 logE = zeros(EEG.trials,1);
 for trial=1:EEG.trials
-    fprintf('Processing trial %i of %i... ',trial, EEG.trials);
+    fprintf('Processing trial %i of %i...',trial, EEG.trials);
     if windowSize > 1
         for k=1:windowSize/2:EEG.pnts
             loc = k:k+windowSize-1;

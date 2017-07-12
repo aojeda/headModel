@@ -20,4 +20,4 @@ addpath(genpath(p));
 h = findobj(gcf, 'tag', 'tools');
 hmMenu = uimenu( h, 'label', 'headModel');
 uimenu( hmMenu, 'label', 'Surface-based (BEM) forward modeling','callback','EEG = pop_forwardModel(EEG);');
-uimenu( hmMenu, 'label', 'Inverse source estimation (LORETA)','callback','EEG = pop_inverseSolution(EEG);');
+uimenu( hmMenu, 'label', 'Inverse source estimation','callback','EEG = pop_inverseSolution(EEG);');

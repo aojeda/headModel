@@ -177,7 +177,7 @@ classdef currentSourceViewer < handle
             catch
                 warning('Bipolar colormap is missing, fallback with jet.')
             end
-            set(obj.hFigure,'Name',[obj.figureName ':  ' sprintf('%f sec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
+            set(obj.hFigure,'Name',[obj.figureName '  ' sprintf('%f sec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
             rotate3d
             drawnow
         end
@@ -332,7 +332,7 @@ classdef currentSourceViewer < handle
                     val(obj.leftH) = nan;
             end
             set(obj.hCortex,'FaceVertexCData',val);
-            set(obj.hFigure,'Name',[obj.figureName ':  ' sprintf('%f sec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
+            set(obj.hFigure,'Name',[obj.figureName '  ' sprintf('%f sec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
             if isempty(obj.scalpData), drawnow;return;end
             val = obj.scalpData(:,obj.pointer);
             set(obj.hScalp,'FaceVertexCData',obj.interpolator*val);
@@ -353,7 +353,7 @@ classdef currentSourceViewer < handle
                     val(obj.leftH) = nan;
             end
             set(obj.hCortex,'FaceVertexCData',val);
-            set(obj.hFigure,'Name',[obj.figureName ':  ' sprintf('%f sec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
+            set(obj.hFigure,'Name',[obj.figureName '  ' sprintf('%f sec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
             if isempty(obj.scalpData), drawnow;return;end
             val = obj.scalpData(:,obj.pointer);
             set(obj.hScalp,'FaceVertexCData',obj.interpolator*val);
@@ -373,7 +373,7 @@ classdef currentSourceViewer < handle
                 case 2
                     val(obj.leftH) = nan;
             end
-            set(obj.hFigure,'Name',[obj.figureName ':  ' sprintf('%f sec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
+            set(obj.hFigure,'Name',[obj.figureName '  ' sprintf('%f sec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
             set(obj.hCortex,'FaceVertexCData',val);
             if isempty(obj.scalpData), drawnow;return;end
             val = obj.scalpData(:,obj.pointer);
