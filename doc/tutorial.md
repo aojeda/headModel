@@ -1,4 +1,4 @@
-# Get started tutorial
+# Getting started tutorial
 In this tutorial, we show a typical command-line pipeline for estimating EEG sources with the `headModel` toolbox. We assume that pre-processing such as artifacts cleaning, highpass filtering, etc. have been performed at an earlier stage (see pre-processing
 guidelines [here](https://github.com/aojeda/headModel/blob/master/doc/pop_functions.md#pre-processing)).
 
