@@ -49,7 +49,7 @@ hmfile = fullfile(p,[n '_hm.mat']);
 [~,loc1,loc2] = intersect(lower(labels),lower(hm.labels),'stable');
 try
     if length(labels) == length(loc2)
-        hm.labels = labels;
+        hm.labels = hm.labels(loc2);
         hm.channelSpace = hm.channelSpace(loc2,:);
         if isempty(hm.channelSpace)
             disp('Cannot coregister based on channel labels, will redurn now!');
