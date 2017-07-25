@@ -177,7 +177,7 @@ classdef headModel < handle
         
         function coregister(obj,xyz,labels)
             [~,loc1,loc2] = intersect(labels,obj.labels,'stable');
-            if ~isempty(loc2)
+            if ~isempty(loc2) && length(loc2) > length(labels)*2/3
                 Aff = geometricTools.affineMapping(xyz(loc1,:),obj.channelSpace(loc2,:));
                 xyz = geometricTools.applyAffineMapping(xyz,Aff);
             end
