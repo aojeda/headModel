@@ -6,43 +6,30 @@ For users accustomed to working with ICA, note that LORETA estimates generaly re
 #### Use `pop_erpimage` to visualize ROI source data
 Suppose that you have used `pop_inverseSolution` to estimate the distributed cortical sources of epoched EEG data. In addition, suppose that you are interested in an ERP that may be around the Supplementary Motor Area (SMA) and want to show a panel with the cortical map that corresponds to the point of maximum negativity, within the first 100 ms, of the source ERP in the SMA. We can use `pop_erpimage` as follows:
 ```matlab
+% Create a new EEG structure with source data in EEG.data
+EEG_src = moveSource2DataField(EEG);
+
 % Load the headModel object
 hm = headModel.loadFromFile(EEG.etc.src.hmfile);
-
-% Create a new EEG structure
-EEG1 = EEG;
-
-% Overwrite the data field with the source data
-EEG1.data = EEG.etc.src.act;
-
-% Update nbchan 
-EEG1.nbchan = length(hm.atlas.label);
-
-% Construct a minimal chanlocs structure with ROI locations and labels
-EEG1.chanlocs = repmat(struct('labels',[],'X',[],'Y',[],'Z',[]),EEG1.nbchan);
-xyz = hm.getCentroidROI(hm.atlas.label);
-for k=1:EEG1.nbchan
-    EEG1.chanlocs(k) = struct('labels',hm.atlas.label{k},'X',xyz(k,1),'Y',xyz(k,2),'Z',xyz(k,3));
-end
 
 % Find the ROI that may correspond to the SMA (in this atlas that may be the Paracentral Gyrus)
 paracentral = find(ismember(hm.atlas.label,'paracentral L'));
 
 % Visualize single-trial source estimates
 fig = figure;
-pop_erpimage(EEG1,1, paracentral,[],hm.atlas.label{paracentral},10,1,{},[],'latency' ,'yerplabel','nA/mm^2','erp','on','cbar','on');
-``` 
+pop_erpimage(EEG_src,1, paracentral,[],hm.atlas.label{paracentral},10,1,{},[],'latency' ,'yerplabel','nA/mm^2','erp','on','cbar','on');
+```
 
 Now, we plot the cortical map as follows:
 ```matlab
 % Compute the source ERP (collapsed within ROIs)
 ERP_src_roi = mean(EEG.etc.src.act,3);
 
-% Compute the source ERP on the whole cortical space
+% Compute the source ERP on the whole cortex
 ERP_src_cortex = mean(EEG.etc.src.actFull, 3);
 
 % Find the indices of the first 100 ms
-ind_100ms = find(EEG1.times>0 & EEG1.times<100);
+ind_100ms = find(EEG_src.times>0 & EEG_src.times<100);
 
 % Find the index of the maximum negativity within the first 100 ms for the ROI that is relevant to us
 [~,ind_mn] = min(ERP_src_roi(paracentral,ind_100ms));
@@ -68,7 +55,7 @@ set(ax,'Position',[0.1690, 0.6, 0.1673, 0.2471]);
 view(ax, [-90 90])
 camlight(0,180)
 camlight(0,0)
-title(ax,['t=' num2str(EEG1.times(ind_100ms(ind_mn))) 'ms'])
+title(ax,['t=' num2str(EEG_src.times(ind_100ms(ind_mn))) 'ms'])
 ```
 which results in the following figure:
 
@@ -90,7 +77,7 @@ autoscale = false;
 fps = 30;
 
 % Set a time line
-time_line = EEG1.times;
+time_line = EEG_src.times;
 
 % Plot on the head model
 hm.plotOnModel(ERP_src_cortex, ERP, ftitle, autoscale, fps, time_line);
@@ -104,4 +91,3 @@ Click on the `topography` icon to switch the visualization to the topography
 Use the `+`/`-`  keys on your keyboard to tune the extrapolation of the sensor data on the head.
 
 [Back](https://github.com/aojeda/headModel/blob/master/doc/Documentation.md)
-
