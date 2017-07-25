@@ -54,7 +54,16 @@ See [these](https://github.com/aojeda/headModel/blob/master/doc/visualization.md
 #### `moveSource2DataField` hack `EEGLAB` to work with source data as it was EEG
 This function is sort of the lazy programmer's approach to writing a specialized toolbox for EEG source imaging. Instead of the latter, the idea is to use as much `EEGLAB` code as we can for signal processing, statistical analysis, and visualization of source estimates, while coding only the missing functionalities (3D fancy viewers etc.).
 
-Use the helper function `moveSource2DataField` to create a new `EEG` structure where the `EEG.data` field holds the ROI source data compute by `pop_inverseSolution` and `EEG.chanlocs` is populated with ROI labels and centroid locations. Then, the resulting `EEG` structure can be treated as an ordinary `EEG` structure, which we can further process with standard `EEGLAB` functions.
+Use the helper function `moveSource2DataField` to create a new `EEG` structure where the `EEG.data` field holds the ROI source data computed by `pop_inverseSolution` and `EEG.chanlocs` is populated with ROI labels and centroid locations. Then, the resulting `EEG` structure can be treated as an ordinary `EEG` structure, which we can further process with standard `EEGLAB` functions.
+```matlab
+% Create a new EEG structure (EEG_src) to store
+% source data in a standard EEGLAB structure
+EEG_src = moveSource2DataField(EEG);
+
+% Add new EEG_src structure to the GUI (optional)
+[ALLEEG EEG CURRENTSET]=eeg_store(ALLEEG, EEG_src);
+eeglab redraw;
+```
 
 **Note that it corresponds to the user to find out whether the assumptions of each method (initially conceived for EEG data) make sense for EEG source data.**
 
