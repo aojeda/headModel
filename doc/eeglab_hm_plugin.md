@@ -25,5 +25,7 @@ See the documentation for `pop_inverseSolution` [here](https://github.com/aojeda
 ### Move ROI source estimates to EEG.data
 Where do we go after computing source estimates? This option calls the helper function `moveSource2DataField` to create a new `EEG` structure where the `EEG.data` field holds the ROI source data computed by `pop_inverseSolution` and `EEG.chanlocs` is populated with ROI labels and centroid locations. The resulting `EEG` structure is added to `ALLEEG` and shown in the main GUI. This *hack* is particularly handy because it allows us to use `EEGLAB` functions for signal processing, statistical analysis, and visualization of source estimates.
 
+See more documentation about `moveSource2DataField`  [here](https://github.com/aojeda/headModel/blob/master/doc/pop_functions.md#movesource2datafield-hack-eeglab-to-work-with-source-data-as-it-was-eeg).
+
 
 [Back](https://github.com/aojeda/headModel/blob/master/doc/Documentation.md)
