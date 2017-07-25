@@ -21,4 +21,5 @@ h = findobj(gcf, 'tag', 'tools');
 hmMenu = uimenu( h, 'label', 'headModel');
 uimenu( hmMenu, 'label', 'Surface-based (BEM) forward modeling','callback','EEG = pop_forwardModel(EEG);');
 uimenu( hmMenu, 'label', 'Inverse source estimation','callback','EEG = pop_inverseSolution(EEG);');
-uimenu( hmMenu, 'label', 'Epoch source estimates collapsed by ROI','callback','EEG = pop_roiEpoch(EEG);eeglab redraw');
+uimenu( hmMenu, 'label', 'Epoch ROI source estimates','callback','EEG = pop_roiEpoch(EEG);eeglab redraw');
+uimenu( hmMenu, 'label', 'Move ROI source estimates to EEG.data','callback','EEG = moveSource2DataField(EEG);[ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG);eeglab redraw');
