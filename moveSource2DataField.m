@@ -1,6 +1,10 @@
 function EEG_roi = moveSource2DataField(EEG)
 EEG_roi = EEG;
-EEG_roi.data = EEG.etc.src.act;
+try
+    EEG_roi.data = EEG.etc.src.act;
+catch
+    error('The src structure is missing, you need to call pop_inverseSolution first.');
+end
 EEG_roi.etc = rmfield(EEG_roi.etc,'src');
 EEG_roi.nbchan = size(EEG_roi.data,1);
 EEG_roi.chanlocs = struct('labels',[],'X',[],'Y',[],'Z',[],'ref',[],'theta',[],'radius',[],'sph_theta',[],'sph_phi',[],'sph_radius',[],'type', 'EEG','urchan',[]);
