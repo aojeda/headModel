@@ -7,11 +7,11 @@ As with any signal processing method, the pre-processing we do before computing 
 * Remove DC component from each channel, this can be accomplished by applying a low-pass filter, removing the mean, or detrending the data.
 * Remove bad channels.
 * Remove non-EEG channels such as EOG or EMG (on the face or neck) as these may have significantly higher amplitude than EEG channels and may bias LORETA towards solutions that explain eye or muscle activity rather than brain.
-* Identifying eye blinks and other artifactual components with ICA and projecting those out of the EEG data usually works well before LORETA. 
-* Remove the average reference i.e. `EEG = pop_reref( EEG, [])`. This should be one of your last pre-processing steps as, internally, `pop_inverseSolution` removes the average reference from the lead field matrix and we need the lead field and the data to be referenced in the same way for the forward model to be valid. 
+* Identifying eye blinks and other artifactual components with ICA and projecting those out of the EEG data usually works well before LORETA.
+* Remove the average reference i.e. `EEG = pop_reref( EEG, [])`. This should be one of your last pre-processing steps as, internally, `pop_inverseSolution` removes the average reference from the lead field matrix and we need the lead field and the data to be referenced in the same way for the forward model to be valid.
 
 #### `pop_forwardModel`
-Use this function to: 
+Use this function to:
 1. Coregister the sensor positions in the `EEG` structure with a template.
 2. Compute the lead field matrix.
 
@@ -47,8 +47,15 @@ Output arguments:
 
 * `EEG.etc.src.actFull`: a tensor of number of sources by `EEG.pnts` by `EEG.trials` that contains the source time series,
 * `EEG.etc.src.act`: same as `EEG.etc.src.actFull` but the first dimension is colapsed within ROIs that correspond to the atlas in the head model, resulting in a tensor of number of ROI by `EEG.pnts` by `EEG.trials`,
-* `EEG.etc.src.roi`: cell array of ROI labels. 
+* `EEG.etc.src.roi`: cell array of ROI labels.
 
 See [these](https://github.com/aojeda/headModel/blob/master/doc/visualization.md) hacks for how to visualize the source estimates.
+
+#### `moveSource2DataField` hack `EEGLAB` to work with source data as it was EEG
+This function is sort of the lazy programmer's approach to writing a specialized toolbox for EEG source imaging. Instead of the latter, the idea is to use as much `EEGLAB` code as we can for signal processing, statistical analysis, and visualization of source estimates, while coding only the missing functionalities (3D fancy viewers etc.).
+
+Use the helper function `moveSource2DataField` to create a new `EEG` structure where the `EEG.data` field holds the ROI source data compute by `pop_inverseSolution` and `EEG.chanlocs` is populated with ROI labels and centroid locations. Then, the resulting `EEG` structure can be treated as an ordinary `EEG` structure, which we can further process with standard `EEGLAB` functions.
+
+**Note that it corresponds to the user to find out whether the assumptions of each method (initially conceived for EEG data) make sense for EEG source data.**
 
 [Back](https://github.com/aojeda/headModel/blob/master/doc/Documentation.md)
