@@ -306,11 +306,19 @@ classdef currentSourceViewer < handle
             if obj.pointer == n
                 obj.pointer =1;
             end
+            obj.hAxes.XTickLabel = [];
+            obj.hAxes.YTickLabel = [];
+            obj.hAxes.ZTickLabel = [];
+            axHeight = obj.hAxes.Position(4);
+            obj.hAxes.Position(4) = 0.8;
+            axis(obj.hAxes,'on')
+            title(obj.hAxes,[obj.figureName '  ' sprintf('%f sec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
             frames(n) = struct('cdata',[],'colormap',[]);
             start_loc = obj.pointer;
             frames(obj.pointer) = getframe(obj.hFigure);
             while obj.pointer < n
                 obj.next();
+                title(obj.hAxes,[obj.figureName '  ' sprintf('%f sec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
                 frames(obj.pointer) = getframe(obj.hFigure);
                 pause(1/obj.fps);
             end
@@ -318,6 +326,9 @@ classdef currentSourceViewer < handle
             if isempty(frames), return;end
             disp(['Now saving movie in' save_in]);
             movie2avi(frames, save_in, 'compression', 'None');
+            title(obj.hAxes,'');
+            obj.hAxes.Position(4) = axHeight;
+            axis(obj.hAxes,'off')
             disp('Done.')
         end
         %%
