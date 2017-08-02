@@ -4,6 +4,6 @@ if ~exist('MultiResolutionBSBL','class')
     obj = invSol.loreta(hm);
 else   
     % Create solver object
-    obj = MultiResolutionBSBL(R*hm.K, PriorCov,sqrtPriorCov,blocks, options);
+    obj = MultiResolutionBSBL(hm);
 end
 end
