@@ -1,6 +1,6 @@
 %% Brainstorm2headModel
 %
-% This script demonstrate how a headModel object can be constructed using
+% This script demonstrates how a headModel object can be constructed using
 % curated MRI templates shiped with the BrainStorm toolbox. Before you run
 % this script, you should agree to BrainStorm license and download it.
 
