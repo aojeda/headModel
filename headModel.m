@@ -326,33 +326,51 @@ classdef headModel < handle
             if isempty(obj.scalp) || isempty(obj.outskull) || isempty(obj.inskull) || isempty(obj.cortex),
                 error('The file containing the surfaces is missing.');
             end
-            status = system('which om_assemble');
-            existOM = ~status;
-            if ~existOM
-                error('OpenMEEG:NoInstalled','OpenMEEG is not intalled in your system.\nClick on the link to download and install <a href="https://gforge.inria.fr/frs/?group_id=435">OpenMEEG</a>.');
+            if ~isempty(strfind(computer,'PCWIN')) %#ok
+                % Locate OpenMEEG binaries
+                if exist('C:\Program Files\OpenMEEG\bin\om_assemble.exe','file')
+                    binDir = '"C:\Program Files\OpenMEEG\bin\"';
+                elseif exist('C:\Program Files (x86)\OpenMEEG\bin\om_assemble.exe','file')
+                    binDir = '"C:\Program Files (x86)\OpenMEEG\bin\"';
+                elseif exist([pwd '\OpenMEEG\bin\om_assemble.exe'],'file')
+                    binDir = [pwd '\OpenMEEG\bin\'];
+                else
+                    binDir = input('Enter the full path to OpenMEEG\bin directory:');
+                    if ~exist(fullfile(binDir,'om_assemble.exe'),'file');
+                        error('OpenMEEG:NoInstalled','Cannot locate OpenMEEG installation directory.\nClick on the link to download and install <a href="https://gforge.inria.fr/frs/?group_id=435">OpenMEEG</a>.');
+                    end
+                end
+            else                
+                existOM = ~system('which om_assemble');
+                if ~existOM
+                    error('OpenMEEG:NoInstalled','OpenMEEG is not intalled in your system.\nClick on the link to download and install <a href="https://gforge.inria.fr/frs/?group_id=435">OpenMEEG</a>.');
+                end
+                binDir = '';
             end
-            rootDir = tempdir;
-            binDir = fileparts(which('libmatio.a'));
+            tmpDir = tempdir;
+            
             [~,rname] = fileparts(tempname);
-            headModelGeometry = fullfile(rootDir,[rname '.geom']);
+            headModelGeometry = fullfile(tmpDir,[rname '.geom']);
             try %#ok
                 copyfile(which('head_model.geom'),headModelGeometry,'f');
                 c1 = onCleanup(@()delete(headModelGeometry));
             end
-            headModelConductivity = fullfile(rootDir,[rname '.cond']);
+            headModelConductivity = fullfile(tmpDir,[rname '.cond']);
             fid = fopen(headModelConductivity,'w');
             fprintf(fid,'# Properties Description 1.0 (Conductivities)\n\nAir         0.0\nScalp       %.3f\nBrain       %0.3f\nSkull       %0.3f',...
                 conductivity(1),conductivity(3),conductivity(2));
             fclose(fid);
             c2 = onCleanup(@()delete(headModelConductivity));
 
-            dipolesFile = fullfile(rootDir,[rname '_dipoles.txt']);
+            dipolesFile = fullfile(tmpDir,[rname '_dipoles.txt']);
             normalsIn = true;
             [normals,obj.cortex.faces] = geometricTools.getSurfaceNormals(obj.cortex.vertices,obj.cortex.faces,normalsIn);
 
             normalityConstrained = ~orientation;
-            if normalityConstrained, sourceSpace = [obj.cortex.vertices normals];
-            else One = ones(length(normals(:,2)),1);
+            if normalityConstrained
+                sourceSpace = [obj.cortex.vertices normals];
+            else
+                One = ones(length(normals(:,2)),1);
                 Zero = 0*One;
                 sourceSpace = [obj.cortex.vertices One Zero Zero;...
                     obj.cortex.vertices Zero One Zero;...
@@ -361,58 +379,50 @@ classdef headModel < handle
             dlmwrite(dipolesFile, sourceSpace, 'precision', 6,'delimiter',' ')
             c3 = onCleanup(@()delete(dipolesFile));
 
-            electrodesFile = fullfile(rootDir,[rname '_elec.txt']);
+            electrodesFile = fullfile(tmpDir,[rname '_elec.txt']);
             dlmwrite(electrodesFile, obj.channelSpace, 'precision', 6,'delimiter',' ')
             c4 = onCleanup(@()delete(electrodesFile));
 
             normalsIn = true;
-            brain = fullfile(rootDir,'brain.tri');
+            brain = fullfile(tmpDir,'brain.tri');
             [normals,obj.inskull.faces] = geometricTools.getSurfaceNormals(obj.inskull.vertices,obj.inskull.faces,normalsIn);
             om_save_tri(brain,obj.inskull.vertices,obj.inskull.faces,normals)
             c5 = onCleanup(@()delete(brain));
 
-            skull = fullfile(rootDir,'skull.tri');
+            skull = fullfile(tmpDir,'skull.tri');
             [normals,obj.outskull.faces] = geometricTools.getSurfaceNormals(obj.outskull.vertices,obj.outskull.faces,normalsIn);
             om_save_tri(skull,obj.outskull.vertices,obj.outskull.faces,normals)
             c6 = onCleanup(@()delete(skull));
 
-            head = fullfile(rootDir,'head.tri');
+            head = fullfile(tmpDir,'head.tri');
             [normals,obj.scalp.faces] = geometricTools.getSurfaceNormals(obj.scalp.vertices,obj.scalp.faces,normalsIn);
             om_save_tri(head,obj.scalp.vertices,obj.scalp.faces,normals)
             c7 = onCleanup(@()delete(head));
 
-            hmFile    = fullfile(rootDir,'hm.bin');    c8  = onCleanup(@()delete(hmFile));
-            hmInvFile = fullfile(rootDir,'hm_inv.bin');c9  = onCleanup(@()delete(hmInvFile));
-            dsmFile   = fullfile(rootDir,'dsm.bin');   c10 = onCleanup(@()delete(dsmFile));
-            h2emFile  = fullfile(rootDir,'h2em.bin');  c11 = onCleanup(@()delete(h2emFile));
-            lfFile    = fullfile(rootDir,[rname '_LF.mat']);
+            hmFile    = fullfile(tmpDir,'hm.bin');    c8  = onCleanup(@()delete(hmFile));
+            hmInvFile = fullfile(tmpDir,'hm_inv.bin');c9  = onCleanup(@()delete(hmInvFile));
+            dsmFile   = fullfile(tmpDir,'dsm.bin');   c10 = onCleanup(@()delete(dsmFile));
+            h2emFile  = fullfile(tmpDir,'h2em.bin');  c11 = onCleanup(@()delete(h2emFile));
+            lfFile    = fullfile(tmpDir,[rname '_LF.mat']);
 
-            if ~existOM
-                runHere = './';
-                wDir = pwd;
-                cd(binDir);
-            else runHere = '';
-            end
             try
-                out = system([runHere 'om_assemble -HM "' headModelGeometry '" "' headModelConductivity '" "' hmFile '"']);
+                out = system([fullfile(binDir,'om_assemble') ' -HM "' headModelGeometry '" "' headModelConductivity '" "' hmFile '"']);
                 if out, error('An unexpected error occurred running OpenMEEG binaries. Report this to alejandro@sccn.ucsd.edu');end
 
-                out = system([runHere 'om_minverser "' hmFile '" "' hmInvFile '"']);
+                out = system([fullfile(binDir,'om_minverser') ' "' hmFile '" "' hmInvFile '"']);
                 if out, error('An unexpected error occurred running OpenMEEG binaries. Report this to alejandro@sccn.ucsd.edu');end
 
-                out = system([runHere 'om_assemble -DSM "' headModelGeometry '" "' headModelConductivity '" "' dipolesFile '" "' dsmFile '"']);
+                out = system([fullfile(binDir,'om_assemble') ' -DSM "' headModelGeometry '" "' headModelConductivity '" "' dipolesFile '" "' dsmFile '"']);
                 if out, error('An unexpected error occurred running OpenMEEG binaries. Report this to alejandro@sccn.ucsd.edu');end
 
-                out = system([runHere 'om_assemble -H2EM "' headModelGeometry '" "' headModelConductivity '" "' electrodesFile '" "' h2emFile '"']);
+                out = system([fullfile(binDir,'om_assemble') ' -H2EM "' headModelGeometry '" "' headModelConductivity '" "' electrodesFile '" "' h2emFile '"']);
                 if out, error('An unexpected error occurred running OpenMEEG binaries. Report this to alejandro@sccn.ucsd.edu');end
 
-                out = system([runHere 'om_gain -EEG "' hmInvFile '" "' dsmFile '" "' h2emFile '" "' lfFile '"']);
+                out = system([fullfile(binDir,'om_gain') ' -EEG "' hmInvFile '" "' dsmFile '" "' h2emFile '" "' lfFile '"']);
                 if out, error('An unexpected error occurred running OpenMEEG binaries. Report this to alejandro@sccn.ucsd.edu');end
             catch ME
-                if strcmp(pwd,binDir), cd(wDir);end
                 ME.rethrow;
             end
-            if strcmp(pwd,binDir), cd(wDir);end
             if ~exist(lfFile,'file'), error('An unexpected error occurred running OpenMEEG binaries. Report this to alejandro@sccn.ucsd.edu');end
 
             load(lfFile);
