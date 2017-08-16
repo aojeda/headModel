@@ -329,14 +329,14 @@ classdef headModel < handle
             if ~isempty(strfind(computer,'PCWIN')) %#ok
                 % Locate OpenMEEG binaries
                 if exist('C:\Program Files\OpenMEEG\bin\om_assemble.exe','file')
-                    binDir = '"C:\Program Files\OpenMEEG\bin\"';
+                    binDir = '"C:\Program Files\OpenMEEG\bin"';
                 elseif exist('C:\Program Files (x86)\OpenMEEG\bin\om_assemble.exe','file')
-                    binDir = '"C:\Program Files (x86)\OpenMEEG\bin\"';
+                    binDir = '"C:\Program Files (x86)\OpenMEEG\bin"';
                 elseif exist([pwd '\OpenMEEG\bin\om_assemble.exe'],'file')
                     binDir = [pwd '\OpenMEEG\bin\'];
                 else
                     binDir = input('Enter the full path to OpenMEEG\bin directory:');
-                    if ~exist(fullfile(binDir,'om_assemble.exe'),'file');
+                    if ~exist(fullfile(binDir,'om_assemble.exe'),'file')
                         error('OpenMEEG:NoInstalled','Cannot locate OpenMEEG installation directory.\nClick on the link to download and install <a href="https://gforge.inria.fr/frs/?group_id=435">OpenMEEG</a>.');
                     end
                 end
