@@ -104,6 +104,4 @@ hm.saveToFile(hmfile);
 EEG.etc.src.hmfile = hmfile;
 ```
 
-
-
 [Back](https://github.com/aojeda/headModel/blob/master/doc/Documentation.md)
