@@ -56,8 +56,54 @@ Use the `Start over` button to discard all the steps done previously and start t
 
 ![coregister_2](https://github.com/aojeda/headModel/blob/master/doc/assets/coregister_2.png)
 
-Use the `Run BEM` button to compute the lead field matrix using the BEM method, as implemented in the [OpenMEEG](https://openmeeg.github.io/) toolbox. To use `OpenMEEG`, its binaries need to be installed on your system, on Unix/Linux this can be usually accomplished issuing `apt-get` commands (consult your local Linux guru/admin for help) or you can compile the project from source as shown [here](https://github.com/openmeeg/openmeeg/). 
+Use the `Run BEM` button to compute the lead field matrix using the BEM method, as implemented in the [OpenMEEG](https://openmeeg.github.io/) toolbox. To use `OpenMEEG`, its binaries need to be installed on your system, on Unix/Linux this can be usually accomplished issuing `apt-get` commands (consult your local Linux guru/admin for help) or you can compile the project from source as shown [here](https://github.com/openmeeg/openmeeg/).
 
-*Note: I have noticed that `OpenMEEG` appears to crash in some systems even after building it from source, if you are one of those lucky people to have such experience, you can contact the maintainers of that toolbox and, if you don't mind, please let me know if a new  patch is issued so that I can update this tutorial. 
+*Note: I have found that `OpenMEEG` appears to crash in some systems even after building it from source, if you are one of those lucky people to have such experience, you can contact the maintainers of that toolbox. Please let me know if a new  patch is issued afterwards so that I can update this tutorial.*
+
+
+### Individualized head models
+We explained earlier the creation of head models warping the digitized sensor positions to the space defined by the skin layer of a template. While a valid approximation in the absence of subject's MRI, this approach discards most of the anatomical information embedded in the subject's sensor positions. To take advantage of subject's anatomical information but lacking its own MRI, in this section we show how to create *individualized* head models.
+
+To create an individualized head model we need to warp the template to the space defined by the channel locations placed on subject's own head. **Be advised that this functionality is in development and not always work.** We use a method of the `headModel` class called `warpTemplate`, which works in the following two steps:
+
+1. Finds a linear or nonlinear mapping between the channel locations in the `EEG` structure and the corresponding channels in the template.
+2. Uses the estimated mapping to warp the scalp, inskull, outskull, and cortical surfaces of the template to the space defined by the individual channel locations.
+
+At the moment we have no GUI interface (only command-line) to this method, so after the co-registration use the `plot` to make sure that the warping worked correctly.
+
+Example:
+````matlab
+% Select a template
+template = which('head_modelColin27_2003_Standard-10-5-Cap339.mat');
+
+% Load the template in the workspace
+hm_template = headModel.loadFromFile(template);
+
+% Collect EEG channel labels and locations
+labels = {EEG.chanlocs.labels};
+elec = [[EEG.chanlocs.X]' [EEG.chanlocs.Y]' [EEG.chanlocs.Z]'];
+
+% Create an individual head model from the data in EEG.chanlocs
+hm = headModel('channelSpace', elec, 'labels', labels);
+
+% Warp the template to the space of the individual channel locations
+hm.warpTemplate(hm_template);
+
+% Sanity check
+hm.plot;
+
+% Compute lead field
+conductivities = [0.33 0.022 0.33];
+orientations = false;
+hm.computeLeadFieldBEM(conductivities, orientations);
+
+% Save individualized head model and store pointer in the EEG structure
+[p,n] = fileparts(fullfile(EEG.filepath,EEG.filename));
+hmfile = fullfile(p,[n '_hm.mat']);
+hm.saveToFile(hmfile);
+EEG.etc.src.hmfile = hmfile;
+```
+
+
 
 [Back](https://github.com/aojeda/headModel/blob/master/doc/Documentation.md)
