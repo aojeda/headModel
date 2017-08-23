@@ -72,7 +72,7 @@ To create an individualized head model we need to warp the template to the space
 At the moment we have no GUI interface (only command-line) to this method, so after the co-registration use the `plot` to make sure that the warping worked correctly.
 
 Example:
-````matlab
+```matlab
 % Select a template
 template = which('head_modelColin27_2003_Standard-10-5-Cap339.mat');
 
