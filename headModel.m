@@ -256,6 +256,9 @@ classdef headModel < handle
             catch
                 disp('Fiducials are missing in the individual head model, selecting the common set of points based on the channel labels.')
                 [~,loc1,loc2] = intersect(lower(obj.labels),lower(templateObj.labels),'stable');
+                if isempty(loc1)
+                    error('Cannot perform the co-registration because we could not find a common set of labels between the template and the individual channels.')
+                end
                 T = obj.channelSpace(loc1,:);
                 S = templateObj.channelSpace(loc2,:);
             end
