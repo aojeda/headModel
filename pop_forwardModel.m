@@ -27,7 +27,15 @@ if nargin < 4, recompute = true;end
 hm = headModel.loadFromFile(hmfile);
 labels = {EEG.chanlocs.labels};
 xyz = [[EEG.chanlocs.X]' [EEG.chanlocs.Y]' [EEG.chanlocs.Z]'];
-if length(labels) ~= size(xyz,1)
+if isempty(xyz)
+    [~,loc] = intersect(lower(labels),lower(hm.labels),'stable');
+    if ~isempty(loc)
+        EEG = pop_select(EEG,'channel',loc);
+        labels = {EEG.chanlocs.labels};
+    else
+        error('Cannot find x, y, z coordinates in the chanlocs structure and the labels do not match those in the template. Try a template with different montage.');
+    end
+elseif length(labels) ~= size(xyz,1)
     % Some channels are missing their location
     labels = cell(EEG.nbchan,1);
     xyz = zeros(EEG.nbchan,3);
