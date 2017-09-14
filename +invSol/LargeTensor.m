@@ -8,20 +8,24 @@ classdef LargeTensor < handle
     methods
         function self = LargeTensor(dims, filename)
             if nargin < 1, error('Tensor size is the first argument! Example:  a = LargeTensor([2,3,4]);');end
-            if nargin < 2, 
+            if nargin < 2
                 filename = tempname;
-                create_file = true;
-            else
-                create_file = false;
             end
             self.file = filename;
-            if create_file
-                if strfind(lower(computer),'glnx')>0
+            if ~exist(self.file,'file')
+                try
                     rt = system(['fallocate -l ' num2str(prod(dims)*8) ' ' self.file]);
-                elseif strfind(lower(computer),'pcwin')>0
-                    rt = system(['fsutil file createnew ' self.file ' length ' num2str(prod(dims)*8)]);
+                    if rt ~=0, error('fallocate is not installed.');end
+                catch 
+                    disp('Creating mmf file...')
+                    fid = fopen(self.file,'w');
+                    z = zeros(prod(dims(setdiff(1:length(dims),2))),1);
+                    for k=1:dims(2)
+                        fwrite(fid, z, 'double');
+                    end
+                    fclose(fid);
+                    disp('done.')
                 end
-                if rt ~=0, error('Cannot create a memory mapped file. Try increasing disk space on /tmp.');end
             end
             self.mmf = memmapfile(self.file,'Format',{'double' dims 'x'},'Writable',true);
         end
