@@ -39,18 +39,29 @@ classdef LargeTensor < handle
                 if exist(bin,'file'), delete(bin);end
             end
         end
-        function slice = subsref(self,s)
-            if length(s)==1
-                slice = subsref(self.mmf.Data.x,s);
-            else
-                slice = self.mmf.Data.x(s(end).subs{1},s(end).subs{2});
+        function slice = subsref(self,s) %#ok
+            ind = '';
+            for k=1:length(s.subs)
+                if ischar(s.subs{k})
+                    ind = [ind s.subs{k}];
+                else
+                    ind = [ind ',[' num2str(s.subs{k}) ']'];
+                end
             end
+            cmd = ['slice=self.mmf.Data.x(' ind ');'];
+            eval(cmd);
         end
-        function slice = subsasgn(self,s,value) 
-            ind = s(end).subs{2};
-            for k=1:length(ind)
-                self.mmf.Data.x(:,ind(k)) = value(:,k);
+        function slice = subsasgn(self,s,value) %#ok
+            ind = '';
+            for k=1:length(s.subs)
+                if ischar(s.subs{k})
+                    ind = [ind s.subs{k}];
+                else
+                    ind = [ind ',[' num2str(s.subs{k}) ']'];
+                end
             end
+            cmd = ['self.mmf.Data.x(' ind ') = value;'];
+            eval(cmd);
             slice = self;
             % slice = subsasgn(self.mmf.Data.x,s,value);
         end
