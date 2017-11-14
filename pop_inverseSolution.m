@@ -1,4 +1,4 @@
-function EEG = pop_inverseSolution(EEG, windowSize, saveFull, solverType)
+function EEG = pop_inverseSolution(EEG, windowSize, saveFull, solverType, postprocCallback)
 if nargin < 1, error('Not enough input arguments.');end
 if nargin < 4
     answer = inputdlg({'Input window size','Save full PCD', 'Input solver type'},'pop_inverseSolution',1,{'16','true', 'loreta'});
@@ -17,6 +17,9 @@ if nargin < 4
         end
         solverType = answer{3};
     end
+end
+if nargin < 5
+    postprocCallback = [];
 end
 windowSize=max([1,windowSize]);
 smoothing = hann(windowSize);
@@ -47,6 +50,9 @@ EEG = pop_select(EEG,'channel',loc);
 
 % Initialize the inverse solver
 sc = 1;
+if norm(hm.K)>1000
+    sc = 1000;
+end
 Ndipoles = size(hm.cortex.vertices,1);
 Nx = size(hm.K,2);
 if strcmpi(solverType,'loreta')
@@ -63,6 +69,8 @@ else
     end
     ind = ismember(plugins,solverType);
     if any(ind)
+        hm.K = hm.K/sc;
+        hm.L = hm.L/sc;
         solver = feval(solverType,hm);
         sc = max(abs(EEG.data(:)))/1000;
         EEG.data = EEG.data/sc;
@@ -70,7 +78,7 @@ else
         solver = invSol.loreta(hm);
     end
 end
-
+EEG.data = double(EEG.data);
 Nroi = length(hm.atlas.label);
 try
     X = zeros(Nx, EEG.pnts, EEG.trials);
@@ -96,11 +104,14 @@ X_roi = zeros(Nroi, EEG.pnts, EEG.trials);
 % Construct the average ROI operator
 P = hm.indices4Structure(hm.atlas.label);
 P = double(P);
-P = bsxfun(@rdivide,P, sum(P))';
+P = sparse(bsxfun(@rdivide,P, sum(P)))';
 
 % Check if we need to integrate over Jx, Jy, Jz components
 if Nx == Ndipoles*3
     P = [P P P];
+    isVect = true;
+else
+    isvect = false;
 end
 
 % Perform source estimation
@@ -119,13 +130,13 @@ for trial=1:EEG.trials
         loc(loc>EEG.pnts) = [];
         if isempty(loc), break;end
         if length(loc) < windowSize
-            X(:,loc,trial) = solver.update(EEG.data(:,loc,trial));
+            X(:,loc,trial) = sc*solver.update(EEG.data(:,loc,trial));
             X_roi(:,loc,trial) = P*X(:,loc,trial);
             break;
         end
         
         % Source estimation
-        Xtmp = solver.update(EEG.data(:,loc,trial));
+        Xtmp = sc*solver.update(EEG.data(:,loc,trial));
         
         % Stitch windows
         if k>1 && windowSize > 1
@@ -136,8 +147,12 @@ for trial=1:EEG.trials
         end
         
         % Compute average ROI time series
-        X_roi(:,loc,trial) = P*X(:,loc,trial);
+        X_roi(:,loc,trial) = computeSourceROI(X(:,loc,trial),P,isVect);
         
+        % Post-processing (if any)
+        if ~isempty(postprocCallback)
+            EEG = postprocCallback(EEG, solver, EEG.times(loc(1)), trial);
+        end
         % Progress indicatior
         [~,ind] = intersect(loc(1:windowSize),prc_5);
         if ~isempty(ind), fprintf('.');end
@@ -149,13 +164,25 @@ end
 fprintf('Done!\n');
 EEG.etc.src.act = X_roi;
 EEG.etc.src.roi = hm.atlas.label;
-EEG.data = EEG.data*sc;
-EEG.etc.src.act = EEG.etc.src.act*sc;
+EEG.data = EEG.data;
+EEG.etc.src.act = EEG.etc.src.act;
 if saveFull
-    EEG.etc.src.actFull = X*sc;
+    try
+        EEG.etc.src.actFull = X;
+    catch
+        EEG.etc.src.actFull = invSol.LargeTensor([Nx, EEG.pnts, EEG.trials], tempname);
+    end
 else
     EEG.etc.src.actFull = [];
 end
 EEG.history = char(EEG.history,'EEG = pop_inverseSolution(EEG, windowSize, saveFull);');
 disp('The source estimates were saved in EEG.etc.src');
+end
+
+function x_roi = computeSourceROI(x,P,isVect)
+if isVect
+    x_roi = sqrt(P*(x.^2));
+else
+    x_roi = P*x;
+end
 end
