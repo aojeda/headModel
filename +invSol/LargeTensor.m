@@ -41,11 +41,15 @@ classdef LargeTensor < handle
         end
         function slice = subsref(self,s) %#ok
             ind = '';
-            for k=1:length(s.subs)
+            n = length(s.subs);
+            for k=1:n
                 if ischar(s.subs{k})
                     ind = [ind s.subs{k}];
                 else
-                    ind = [ind ',[' num2str(s.subs{k}) ']'];
+                    ind = [ind '[' num2str(s.subs{k}) ']'];
+                end
+                if k<n
+                    ind(end+1) = ',';
                 end
             end
             cmd = ['slice=self.mmf.Data.x(' ind ');'];

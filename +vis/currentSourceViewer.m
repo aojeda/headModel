@@ -382,6 +382,7 @@ classdef currentSourceViewer < handle
             obj.pointer = obj.pointer+1;
             n = size(obj.sourceMagnitud,2);
             if obj.pointer > n, obj.pointer = n;end
+            if obj.pointer < 1, obj.pointer = 1;end
             val = obj.sourceMagnitud(:,obj.pointer);
 
             switch obj.lrState
