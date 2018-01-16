@@ -209,7 +209,7 @@ classdef currentSourceViewer < handle
             view(obj.hAxes,[90 0]);
             set(obj.hAxes,'Clim',obj.clim.source);
             obj.colorBar = colorbar(obj.hAxes);
-            obj.colorBar.Label.String = 'PCD ($\mu A/mm^2$)';
+            obj.colorBar.Label.String = 'PCD ($nA/mm^2$)';
             obj.colorBar.Label.Interpreter = 'Latex';
             tick = {};for k=linspace(obj.clim.scalp(1)*1.1,obj.clim.scalp(2)*1.1,7) tick{end+1} = num2str(k,4);end
             obj.colorBar.UserData.scalp = tick;
@@ -229,7 +229,7 @@ classdef currentSourceViewer < handle
             catch
                 warning('Bipolar colormap is missing, fallback with jet.')
             end
-            set(obj.hFigure,'Name',[obj.figureName '  ' sprintf('%f sec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
+            set(obj.hFigure,'Name',[obj.figureName '  ' sprintf('%f msec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
             rotate3d
             drawnow
         end
@@ -290,11 +290,11 @@ classdef currentSourceViewer < handle
                 case 'vectorOff'
                     set([obj.hVectorL obj.hVectorR],'Visible','off');
                 case 'scalpOn'
-                    obj.colorBar.Label.String = 'Voltage (mV)';
+                    obj.colorBar.Label.String = 'Voltage ($\mu V$)';
                     %set(obj.hAxes,'Clim',obj.clim.scalp);
                     obj.colorBar.TickLabels = obj.colorBar.UserData.scalp;
                 case 'scalpOff'
-                    obj.colorBar.Label.String = 'PCD ($\mu A/mm^2$)';
+                    obj.colorBar.Label.String = 'PCD ($nA/mm^2$)';
                     %set(obj.hAxes,'Clim',obj.clim.source);
                     obj.colorBar.TickLabels = obj.colorBar.UserData.source;
             end
@@ -344,6 +344,10 @@ classdef currentSourceViewer < handle
             [filename,filepath] = uiputfile('*.avi','Save movie as');
             if isnumeric(filename);return;end
             save_in = fullfile(filepath,filename);
+            writer = VideoWriter(save_in);
+            writer.FrameRate = 30;
+            writer.Quality = 100;
+            open(writer);
             n = size(obj.sourceMagnitud,2);
             if obj.pointer == n
                 obj.pointer =1;
@@ -353,24 +357,20 @@ classdef currentSourceViewer < handle
             obj.hAxes.ZTickLabel = [];
             axHeight = obj.hAxes.Position(4);
             obj.hAxes.Position(4) = 0.8;
-            axis(obj.hAxes,'on')
-            title(obj.hAxes,[obj.figureName '  ' sprintf('%f sec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
+            title(obj.hAxes,[obj.figureName '  ' sprintf('%f msec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
             frames(n) = struct('cdata',[],'colormap',[]);
-            start_loc = obj.pointer;
             frames(obj.pointer) = getframe(obj.hFigure);
+            writeVideo(writer, frames(obj.pointer));
             while obj.pointer < n
                 obj.next();
                 title(obj.hAxes,[obj.figureName '  ' sprintf('%f sec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
                 frames(obj.pointer) = getframe(obj.hFigure);
+                writeVideo(writer, frames(obj.pointer));
                 pause(1/obj.fps);
             end
-            frames(1:start_loc-1) = [];
-            if isempty(frames), return;end
-            disp(['Now saving movie in' save_in]);
-            movie2avi(frames, save_in, 'compression', 'None');
+            close(writer);
             title(obj.hAxes,'');
             obj.hAxes.Position(4) = axHeight;
-            axis(obj.hAxes,'off')
             disp('Done.')
         end
         %%
@@ -404,7 +404,7 @@ classdef currentSourceViewer < handle
                 set(obj.hVectorR,'UData',obj.sourceOrientation(obj.rightH,1,obj.pointer),'VData',obj.sourceOrientation(obj.rightH,2,obj.pointer),'WData',obj.sourceOrientation(obj.rightH,3,obj.pointer));
             end
             set(obj.hCortex,'FaceVertexCData',val);
-            set(obj.hFigure,'Name',[obj.figureName '  ' sprintf('%f sec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
+            set(obj.hFigure,'Name',[obj.figureName '  ' sprintf('%f msec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
             if isempty(obj.scalpData), drawnow;return;end
             val = obj.scalpData(:,obj.pointer);
             set(obj.hScalp,'FaceVertexCData',val);
