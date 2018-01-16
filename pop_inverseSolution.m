@@ -109,7 +109,7 @@ if Nx == Ndipoles*3
     P = [P P P];
     isVect = true;
 else
-    isvect = false;
+    isVect = false;
 end
 
 % Perform source estimation
