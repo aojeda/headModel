@@ -18,7 +18,6 @@ classdef headModel < handle
     end
     properties(GetAccess = private, SetAccess = private, Hidden)
         F = [];
-        tmpFiles = {}
     end
     properties(Dependent, Hidden)
         channelLabel = []
@@ -386,7 +385,7 @@ classdef headModel < handle
             dlmwrite(electrodesFile, obj.channelSpace, 'precision', 6,'delimiter',' ')
             c4 = onCleanup(@()delete(electrodesFile));
 
-            normalsIn = true;
+            normalsIn = false;
             brain = fullfile(tmpDir,'brain.tri');
             [normals,obj.inskull.faces] = geometricTools.getSurfaceNormals(obj.inskull.vertices,obj.inskull.faces,normalsIn);
             om_save_tri(brain,obj.inskull.vertices,obj.inskull.faces,normals)
@@ -567,20 +566,10 @@ classdef headModel < handle
             s.version = 2;
             save(filename,'-struct','s');
         end
-        function delete(obj)
-            for k=1:length(obj.tmpFiles)
-                if exist(obj.tmpFiles{k},'file')
-                    delete(obj.tmpFiles{k});
-                end
-            end
-        end
 
         %% Deprecated fields and methods
         function surfaces = get.surfaces(obj)
-            surfData = [obj.scalp;obj.outskull;obj.inskull;obj.cortex];
-            surfaces = tempname;
-            save(surfaces,'surfData');
-            obj.tmpFiles{end+1} = surfaces;
+            surfaces = [obj.scalp;obj.outskull;obj.inskull;obj.cortex];
             warning('"surfaces" has been deprecated, instead you can access directly the properties "scalp", "outskull", "inskull", or "cortex".')
         end
         function leadFieldFile = get.leadFieldFile(obj)
@@ -588,7 +577,6 @@ classdef headModel < handle
             K = obj.K;
             L = obj.L;
             save(leadFieldFile,'K','L');
-            obj.tmpFiles{end+1} = leadFieldFile;
             warning('"leadFieldFile" has been deprecated, instead you can access directly the properties "K" and "L".');
         end
         function cobj = copy(obj)
@@ -613,6 +601,7 @@ classdef headModel < handle
     %%
     methods(Static)
         function obj = loadFromFile(filename)
+            coder.extrinsic('exist');
             if ~exist(filename,'file')
                 error('File does not exist');
             end
