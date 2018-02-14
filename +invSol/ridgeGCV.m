@@ -43,7 +43,7 @@ Ut = U';
 V = L\V;
 s = diag(S);
 s2 = s.^2;
-[J,lambdaOpt,T] = ridgeSVD(Y,Ut, s2,V,nlambda,plotGCV);
+[J,lambdaOpt,T] = invSol.ridgeSVD(Y,Ut, s2,V,nlambda,plotGCV);
 if nargout > 2
     Yhat = K*J;
 end
