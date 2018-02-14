@@ -52,6 +52,8 @@ EEG = pop_select(EEG,'channel',loc);
 sc = 1;
 if norm(hm.K)>1000
     sc = 1000;
+    hm.K = hm.K/sc;
+    hm.L = hm.L/sc;
 end
 Ndipoles = size(hm.cortex.vertices,1);
 Nx = size(hm.K,2);
@@ -69,11 +71,7 @@ else
     end
     ind = ismember(plugins,solverType);
     if any(ind)
-        hm.K = hm.K/sc;
-        hm.L = hm.L/sc;
         solver = feval(solverType,hm);
-        sc = max(abs(EEG.data(:)))/1000;
-        EEG.data = EEG.data/sc;
     else
         solver = invSol.loreta(hm);
     end
