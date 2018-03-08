@@ -13,7 +13,8 @@ classdef currentSourceViewer < handle
         hSensors
         hScalp
         hCortex
-        hVector
+        hVectorL
+        hVectorR
         dcmHandle
         sourceMagnitud
         sourceOrientation
@@ -24,6 +25,8 @@ classdef currentSourceViewer < handle
         autoscale = false;
         fps = 30;
         time
+        colorBar;
+        timeCursor;
     end
     properties(GetAccess=private,Hidden)
         Nframes
@@ -35,21 +38,20 @@ classdef currentSourceViewer < handle
         lrState = 0;
         leftH
         rightH
-        interpolator
-        smoothness = 1;
+        cortexAlpha = [];
+        scalpAlpha = [];
     end
     methods
-        function obj = currentSourceViewer(hmObj,J,V,figureTitle,autoscale, fps, time)
+        function obj = currentSourceViewer(hmObj,J,V,figureTitle,~, fps, time)
             if nargin < 3, V = [];end
             if nargin < 4, figureTitle = '';end
-            if nargin < 5, autoscale = false;end
             if nargin < 6, fps = 30;end
             if nargin < 7, time = 1:size(J,1);end
             obj.hmObj = hmObj;
-            obj.autoscale = autoscale;
+            obj.autoscale = false;
             obj.fps = fps;
             obj.time = time;
-            color = ones(1,3); % [0.93 0.96 1];
+            color = ones(1,3);
             path = fileparts(which('headModel.m'));
             path = fullfile(path,'+vis','icons');
             labelsOn  = imread([path filesep 'labelsOn.png']);
@@ -67,6 +69,9 @@ classdef currentSourceViewer < handle
             rec = imread([path filesep '32px-Gnome-media-record.svg.png']);
             lrBrain = imread([path filesep 'lr_brain.png']);
             
+            J = double(J);
+            V = double(V);
+            
             [~,~, obj.leftH, obj.rightH] = geometricTools.splitBrainHemispheres(hmObj.cortex);
             obj.playIcon = play;
             obj.pauseIcon = pause;
@@ -77,10 +82,10 @@ classdef currentSourceViewer < handle
             position = get(obj.hFigure,'Position');
             set(obj.hFigure,'Position',[position(1:2) 1.25*position(3:4)]);
             obj.hAxes = axes('Parent',obj.hFigure);
-            set(obj.hFigure,'KeyPressFcn', @(src,event)scalpSmoothControl(obj));
+            
             toolbarHandle = findall(obj.hFigure,'Type','uitoolbar');
-
-            hcb(1) = uitoggletool(toolbarHandle,'CData',labelsOff,'Separator','on','HandleVisibility','off','TooltipString','Labels On/Off','userData',{labelsOn,labelsOff},'State','off');
+            
+            hcb(1) = uitoggletool(toolbarHandle,'CData',labelsOff,'Separator','off','HandleVisibility','off','TooltipString','Labels On/Off','userData',{labelsOn,labelsOff},'State','off');
             set(hcb(1),'OnCallback',@(src,event)rePaint(obj,hcb(1),'labelsOn'),'OffCallback',@(src, event)rePaint(obj,hcb(1),'labelsOff'));
 
             hcb(2) = uitoggletool(toolbarHandle,'CData',sensorsOff,'Separator','off','HandleVisibility','off','TooltipString','Sensors On/Off','userData',{sensorsOn,sensorsOff},'State','off');
@@ -100,7 +105,29 @@ classdef currentSourceViewer < handle
             uipushtool(toolbarHandle,'CData',play,'Separator','on','HandleVisibility','off','TooltipString','Play','ClickedCallback',@obj.play);
             uipushtool(toolbarHandle,'CData',rec,'Separator','on','HandleVisibility','off','TooltipString','Play','ClickedCallback',@obj.rec);
             set(obj.hFigure,'WindowScrollWheelFcn',@(src, event)mouseMove(obj,[], event));
-
+            pn = uipanel(obj.hFigure);
+            pn.Position = [0 0.0 1 0.1];
+            obj.cortexAlpha = uicontrol(pn,'Style', 'slider','Min',0,'Max',1,'Value',1,'Units','normalized',...
+                'Position',[0.0201, 0.1, 0.1954, 0.3922],'Callback',@obj.setCortexAlpha);
+            addlistener(obj.cortexAlpha,'ContinuousValueChange',@obj.setCortexAlpha);
+            lb = uicontrol(pn,'Style', 'text','String','Cortex Transparency','Units','normalized',...
+                'Position',[0.0115, 0.5294, 0.2112, 0.2941]);
+            
+            obj.scalpAlpha = uicontrol(pn,'Style', 'slider','Min',0,'Max',1,'Value',0.25,'Units','normalized',...
+                'Position',[0.2600, 0.1000, 0.1954, 0.3922], 'Callback',@obj.setScalpAlpha);
+            addlistener(obj.scalpAlpha,'ContinuousValueChange',@obj.setScalpAlpha);
+            lb2 = uicontrol(pn,'Style', 'text','String','Scalp Transparency','Units','normalized',...
+                'Position',[0.2558, 0.5294, 0.1867, 0.2941]);
+            
+            obj.timeCursor = uicontrol(pn,'Style', 'slider','Min',1,'Max',size(J,2),'Value',1,'Units','normalized',...
+                'Position',[0.5057, 0.1, 0.4167, 0.3922], 'Callback',@obj.setTimeCursor);
+            addlistener(obj.timeCursor,'ContinuousValueChange',@obj.setTimeCursor);
+            lb3 = uicontrol(pn,'Style', 'text','String','Time Cursor','Units','normalized',...
+                'Position',[0.6020, 0.5294, 0.1867, 0.2941]);
+            
+                        
+            obj.hAxes.Position([2 4]) = [0.18 0.75];
+            
             obj.dcmHandle = datacursormode(obj.hFigure);
             obj.dcmHandle.SnapToDataVertex = 'off';
             set(obj.dcmHandle,'UpdateFcn',@(src,event)showLabel(obj,event));
@@ -117,28 +144,39 @@ classdef currentSourceViewer < handle
             for it=1:N, obj.hLabels(it) = text('Position',k*obj.hmObj.channelSpace(it,:),'String',obj.hmObj.labels{it},'Parent',obj.hAxes);end
             set(obj.hLabels,'Visible','off');
 
+            normals = geometricTools.getSurfaceNormals(obj.hmObj.cortex.vertices,obj.hmObj.cortex.faces, false);
             if size(J,1) == 3*size(obj.hmObj.cortex.vertices,1)
                 J = reshape(J,[size(J,1)/3 3 size(J,2)]);
                 Jm = squeeze(sqrt(sum(J.^2,2)));
-                normals = J;
+                % J = bsxfun(@rdivide,J,std(Jm,[],2));
+                mx = max(std(obj.hmObj.cortex.vertices));
+                J = mx*J/max(abs(J(:)));
+                normals = 2*J;
             else
                 Jm = J;
-                normals = geometricTools.getSurfaceNormals(obj.hmObj.cortex.vertices,obj.hmObj.cortex.faces, false);
             end
             obj.sourceMagnitud = Jm;
             obj.sourceOrientation = J;
             obj.pointer = 1;
             obj.Nframes = num2str(size(obj.sourceMagnitud,2));
             obj.is3d = ndims(obj.sourceOrientation) > 2;
-
+            
+            disp('Calibrating the source color scale...')
+            mx = obj.getRobustLimits(obj.sourceMagnitud(:),0.1);
+            obj.clim.source = [-mx mx];
+            set(obj.hAxes,'Clim',obj.clim.source);
+            disp('Done.')
+            
             % vectors
-            obj.hVector = quiver3(obj.hmObj.cortex.vertices(:,1),obj.hmObj.cortex.vertices(:,2),obj.hmObj.cortex.vertices(:,3),...
-                normals(:,1,1),normals(:,2,1),normals(:,3,1),2);
-            set(obj.hVector,'Color','k','Visible','off');
+            obj.hVectorL = quiver3(obj.hmObj.cortex.vertices(obj.leftH,1),obj.hmObj.cortex.vertices(obj.leftH,2),obj.hmObj.cortex.vertices(obj.leftH,3),...
+                normals(obj.leftH,1,1),normals(obj.leftH,2,1),normals(obj.leftH,3,1),0,'MaxHeadSize',1);
+            obj.hVectorR = quiver3(obj.hmObj.cortex.vertices(obj.rightH,1),obj.hmObj.cortex.vertices(obj.rightH,2),obj.hmObj.cortex.vertices(obj.rightH,3),...
+                normals(obj.rightH,1,1),normals(obj.rightH,2,1),normals(obj.rightH,3,1),0,'MaxHeadSize',1);
+            set([obj.hVectorL obj.hVectorR],'Color','k','Visible','off','LineWidth',0.5);
 
             % cortex
             obj.hCortex = patch('vertices',obj.hmObj.cortex.vertices,'faces',obj.hmObj.cortex.faces,'FaceVertexCData',obj.sourceMagnitud(:,1),...
-                'FaceColor','interp','FaceLighting','phong','LineStyle','none','FaceAlpha',1,'SpecularColorReflectance',0,...
+                'FaceColor','interp','FaceLighting','phong','LineStyle','none','FaceAlpha',obj.cortexAlpha.Value,'SpecularColorReflectance',0,...
                 'SpecularExponent',25,'SpecularStrength',0.25,'Parent',obj.hAxes);
             camlight(0,180)
             camlight(0,0)
@@ -147,37 +185,51 @@ classdef currentSourceViewer < handle
             if isempty(V)
                 skinColor = [1,.75,.65];
                 obj.hScalp = patch('vertices',obj.hmObj.scalp.vertices,'faces',obj.hmObj.scalp.faces,'facecolor',skinColor,...
-                    'facelighting','phong','LineStyle','none','FaceAlpha',.85,'Parent',obj.hAxes,'Visible','off');
+                    'facelighting','phong','LineStyle','none','FaceAlpha',obj.scalpAlpha.Value,'Parent',obj.hAxes);
                 obj.scalpData = [];
+                obj.clim.scalp = obj.clim.source;
             else
-                obj.smoothness = max(abs(obj.hmObj.channelSpace(:)))/10;
-                obj.interpolator = geometricTools.localGaussianInterpolator(obj.hmObj.channelSpace,obj.hmObj.scalp.vertices,obj.smoothness);
-                obj.scalpData = V;
-
-                obj.hScalp = patch('vertices',obj.hmObj.scalp.vertices,'faces',obj.hmObj.scalp.faces,'FaceVertexCData',obj.interpolator*obj.scalpData(:,1),...
-                    'FaceColor','interp','FaceLighting','phong','LineStyle','none','FaceAlpha',1,'SpecularColorReflectance',0,...
-                    'SpecularExponent',25,'SpecularStrength',0.25,'Parent',obj.hAxes,'Visible','off');
+                disp('Calibrating the scalp color scale...')
+                mx = obj.getRobustLimits(V,0.1);
+                obj.clim.scalp = [-mx mx];
+                disp('Done.')
+                
+                obj.scalpData = zeros(size(obj.hmObj.scalp.vertices,1),size(V,2));
+                for k=1:size(V,2)
+                     F = scatteredInterpolant(obj.hmObj.channelSpace,V(:,k),'natural','linear');
+                    obj.scalpData(:,k) = F(obj.hmObj.scalp.vertices);
+                end
+                obj.scalpData = obj.clim.source(2)*obj.scalpData/mx;
+                indz = obj.hmObj.scalp.vertices(:,3) < min(obj.hmObj.channelSpace(:,3)) - 0.1*abs(min(obj.hmObj.channelSpace(:,3)));
+                obj.scalpData(indz,:) = 0;
+                obj.hScalp = patch('vertices',obj.hmObj.scalp.vertices,'faces',obj.hmObj.scalp.faces,'FaceVertexCData',obj.scalpData(:,1),...
+                    'FaceColor','interp','FaceLighting','phong','LineStyle','none','FaceAlpha',obj.scalpAlpha.Value,'SpecularColorReflectance',0,...
+                    'SpecularExponent',25,'SpecularStrength',0.25,'Parent',obj.hAxes);
             end
             view(obj.hAxes,[90 0]);
-            if ~obj.autoscale
-                disp('Calibrating the color scale...')
-                mxsrc = obj.getRobustLimits(obj.sourceMagnitud(:),0.1);
-                mxscp = obj.getRobustLimits(obj.scalpData,0.1);
-                obj.clim = struct('source',[-mxsrc mxsrc],'scalp',[-mxscp mxscp]);
-                set(obj.hAxes,'Clim',obj.clim.source);
-                disp('Done.')
-            end
-            colorbar
+            set(obj.hAxes,'Clim',obj.clim.source);
+            obj.colorBar = colorbar(obj.hAxes);
+            obj.colorBar.Label.String = 'PCD ($nA/mm^2$)';
+            obj.colorBar.Label.Interpreter = 'Latex';
+            tick = {};for k=linspace(obj.clim.scalp(1)*1.1,obj.clim.scalp(2)*1.1,7) tick{end+1} = num2str(k,4);end
+            obj.colorBar.UserData.scalp = tick;
+            tick = {};for k=linspace(obj.clim.source(1)*1.1,obj.clim.source(2)*1.1,7) tick{end+1} = num2str(k,4);end
+            obj.colorBar.UserData.source = tick;
+            obj.colorBar.UserData.scalp{4} = '0';
+            obj.colorBar.UserData.source{4} = '0';
+            obj.colorBar.Ticks = linspace(obj.clim.source(1)*1.1,obj.clim.source(2)*1.1,7);
+            obj.colorBar.Ticks(4) = 0;
+            obj.colorBar.TickLabels = obj.colorBar.UserData.source;
             % box on;
             hold(obj.hAxes,'off');
             axis(obj.hAxes,'equal','vis3d');
-            axis(obj.hAxes,'off')
+            axis(obj.hAxes,'off');
             try
                 colormap(bipolar(512, 0.99))
             catch
                 warning('Bipolar colormap is missing, fallback with jet.')
             end
-            set(obj.hFigure,'Name',[obj.figureName '  ' sprintf('%f sec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
+            set(obj.hFigure,'Name',[obj.figureName '  ' sprintf('%f msec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
             rotate3d
             drawnow
         end
@@ -233,28 +285,18 @@ classdef currentSourceViewer < handle
                     set(obj.hSensors,'Visible','on');
                 case 'sensorsOff'
                     set(obj.hSensors,'Visible','off');
-                case 'scalpOn'
-                    set(obj.hCortex,'FaceAlpha',0.15);
-                    if strcmp(get(obj.hVector,'Visible'),'on')
-                        set(obj.hScalp,'Visible','on','FaceAlpha',0.95);
-                    else
-                        set(obj.hScalp,'Visible','on','FaceAlpha',1);
-                    end
-                    if ~obj.autoscale
-                        set(get(obj.hScalp,'Parent'),'Clim',obj.clim.scalp);
-                    end
-                case 'scalpOff'
-                    set(obj.hScalp,'Visible','off');
-                    set(obj.hCortex,'Visible','on','FaceAlpha',1);
-                    if ~obj.autoscale
-                        set(get(obj.hCortex,'Parent'),'Clim',obj.clim.source);
-                    end
                 case 'vectorOn'
-                    set(obj.hVector,'Visible','on');
-                    set(obj.hCortex,'FaceAlpha',0.75);
+                    set([obj.hVectorL obj.hVectorR],'Visible','on');
                 case 'vectorOff'
-                    set(obj.hVector,'Visible','off');
-                    set(obj.hCortex,'FaceAlpha',1);
+                    set([obj.hVectorL obj.hVectorR],'Visible','off');
+                case 'scalpOn'
+                    obj.colorBar.Label.String = 'Voltage ($\mu V$)';
+                    %set(obj.hAxes,'Clim',obj.clim.scalp);
+                    obj.colorBar.TickLabels = obj.colorBar.UserData.scalp;
+                case 'scalpOff'
+                    obj.colorBar.Label.String = 'PCD ($nA/mm^2$)';
+                    %set(obj.hAxes,'Clim',obj.clim.source);
+                    obj.colorBar.TickLabels = obj.colorBar.UserData.source;
             end
         end
         %%
@@ -302,6 +344,10 @@ classdef currentSourceViewer < handle
             [filename,filepath] = uiputfile('*.avi','Save movie as');
             if isnumeric(filename);return;end
             save_in = fullfile(filepath,filename);
+            writer = VideoWriter(save_in);
+            writer.FrameRate = 30;
+            writer.Quality = 100;
+            open(writer);
             n = size(obj.sourceMagnitud,2);
             if obj.pointer == n
                 obj.pointer =1;
@@ -311,99 +357,78 @@ classdef currentSourceViewer < handle
             obj.hAxes.ZTickLabel = [];
             axHeight = obj.hAxes.Position(4);
             obj.hAxes.Position(4) = 0.8;
-            axis(obj.hAxes,'on')
-            title(obj.hAxes,[obj.figureName '  ' sprintf('%f sec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
+            title(obj.hAxes,[obj.figureName '  ' sprintf('%f msec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
             frames(n) = struct('cdata',[],'colormap',[]);
-            start_loc = obj.pointer;
             frames(obj.pointer) = getframe(obj.hFigure);
+            writeVideo(writer, frames(obj.pointer));
             while obj.pointer < n
                 obj.next();
                 title(obj.hAxes,[obj.figureName '  ' sprintf('%f sec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
                 frames(obj.pointer) = getframe(obj.hFigure);
+                writeVideo(writer, frames(obj.pointer));
                 pause(1/obj.fps);
             end
-            frames(1:start_loc-1) = [];
-            if isempty(frames), return;end
-            disp(['Now saving movie in' save_in]);
-            movie2avi(frames, save_in, 'compression', 'None');
+            close(writer);
             title(obj.hAxes,'');
             obj.hAxes.Position(4) = axHeight;
-            axis(obj.hAxes,'off')
             disp('Done.')
         end
         %%
         function prev(obj,~,~)
-            obj.pointer = obj.pointer-1;
-            if obj.pointer < 1, obj.pointer = 1;end
-            val = obj.sourceMagnitud(:,obj.pointer);
-            switch obj.lrState
-                case 1
-                    val(obj.rightH) = nan;
-                case 2
-                    val(obj.leftH) = nan;
-            end
-            set(obj.hCortex,'FaceVertexCData',val);
-            set(obj.hFigure,'Name',[obj.figureName '  ' sprintf('%f sec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
-            if isempty(obj.scalpData), drawnow;return;end
-            val = obj.scalpData(:,obj.pointer);
-            set(obj.hScalp,'FaceVertexCData',obj.interpolator*val);
-            try %#ok
-                set(obj.hVector,'UData',obj.sourceOrientation(:,1,obj.pointer),'VData',obj.sourceOrientation(:,2,obj.pointer),'WData',obj.sourceOrientation(:,3,obj.pointer));
-            end
+            obj.pointer = obj.pointer - 2;
+            obj.next();
         end
         function next(obj,~,~)
             obj.pointer = obj.pointer+1;
             n = size(obj.sourceMagnitud,2);
             if obj.pointer > n, obj.pointer = n;end
+            if obj.pointer < 1, obj.pointer = 1;end
             val = obj.sourceMagnitud(:,obj.pointer);
 
             switch obj.lrState
                 case 1
                     val(obj.rightH) = nan;
+                    if strcmp(obj.hVectorR.Visible,'on') || strcmp(obj.hVectorL.Visible,'on')
+                        obj.hVectorR.Visible = 'off';
+                        obj.hVectorL.Visible = 'on';
+                    end
                 case 2
                     val(obj.leftH) = nan;
+                    if strcmp(obj.hVectorR.Visible,'on') || strcmp(obj.hVectorL.Visible,'on')
+                        obj.hVectorR.Visible = 'on';
+                        obj.hVectorL.Visible = 'off';
+                    end
+            end
+            if obj.is3d
+                set(obj.hVectorL,'UData',obj.sourceOrientation(obj.leftH,1,obj.pointer),'VData',obj.sourceOrientation(obj.leftH,2,obj.pointer),'WData',obj.sourceOrientation(obj.leftH,3,obj.pointer));
+                set(obj.hVectorR,'UData',obj.sourceOrientation(obj.rightH,1,obj.pointer),'VData',obj.sourceOrientation(obj.rightH,2,obj.pointer),'WData',obj.sourceOrientation(obj.rightH,3,obj.pointer));
             end
             set(obj.hCortex,'FaceVertexCData',val);
-            set(obj.hFigure,'Name',[obj.figureName '  ' sprintf('%f sec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
+            set(obj.hFigure,'Name',[obj.figureName '  ' sprintf('%f msec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
             if isempty(obj.scalpData), drawnow;return;end
             val = obj.scalpData(:,obj.pointer);
-            set(obj.hScalp,'FaceVertexCData',obj.interpolator*val);
-            if obj.is3d
-                set(obj.hVector,'UData',obj.sourceOrientation(:,1,obj.pointer),'VData',obj.sourceOrientation(:,2,obj.pointer),'WData',obj.sourceOrientation(:,3,obj.pointer));
-            end
+            set(obj.hScalp,'FaceVertexCData',val);
+            obj.timeCursor.Value = obj.pointer;
             drawnow
         end
         function mouseMove(obj,~,eventObj)
-            obj.pointer = obj.pointer - eventObj.VerticalScrollCount;%*eventObj.VerticalScrollAmount;
-            if obj.pointer < 1, obj.pointer = 1;end
-            if obj.pointer > size(obj.sourceMagnitud,2), obj.pointer = size(obj.sourceMagnitud,2);end
-            val = obj.sourceMagnitud(:,obj.pointer);
-            switch obj.lrState
-                case 1
-                    val(obj.rightH) = nan;
-                case 2
-                    val(obj.leftH) = nan;
+            obj.pointer = obj.pointer + eventObj.VerticalScrollCount;
+            if eventObj.VerticalScrollCount<0
+                obj.pointer = obj.pointer - 1;
             end
-            set(obj.hFigure,'Name',[obj.figureName '  ' sprintf('%f sec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
-            set(obj.hCortex,'FaceVertexCData',val);
-            if isempty(obj.scalpData), drawnow;return;end
-            val = obj.scalpData(:,obj.pointer);
-            set(obj.hScalp,'FaceVertexCData',obj.interpolator*val);
+            if obj.pointer < 1, obj.pointer = 0;end
+            if obj.pointer > size(obj.sourceMagnitud,2), obj.pointer = size(obj.sourceMagnitud,2)-1;end
+            obj.next;
         end
-        function scalpSmoothControl(obj,~)
-            if isempty(obj.scalpData),return;end
-            key = get(obj.hFigure,'CurrentKey');
-            if strcmp(key,'add')
-                obj.smoothness = obj.smoothness*1.0125;
-            elseif strcmp(key,'subtract')
-                obj.smoothness = obj.smoothness/1.0125;
-            else
-                return;
-            end
-            obj.interpolator = geometricTools.localGaussianInterpolator(obj.hmObj.channelSpace,obj.hmObj.scalp.vertices,obj.smoothness);
-            val = obj.scalpData(:,obj.pointer);
-            set(obj.hScalp,'FaceVertexCData',obj.interpolator*val);
-            drawnow;
+        function setCortexAlpha(obj,~,~)
+            obj.hCortex.FaceAlpha = obj.cortexAlpha.Value;
+        end
+        function setScalpAlpha(obj,~,~)
+            obj.hScalp.FaceAlpha = obj.scalpAlpha.Value;
+        end
+        function setTimeCursor(obj, ~, ~)
+            obj.pointer = round(obj.timeCursor.Value)-1;
+            obj.next;
         end
     end
 end

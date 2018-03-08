@@ -2,7 +2,7 @@
 In this section, we describe the two pop functions that can work with EEGLAB's `EEG` structure. First, we say a word about pre-processing.
 
 #### Pre-processing
-As with any signal processing method, the pre-processing we do before computing the forward and inverse solutions is critical and can make the difference between estimating source maps with physiologic relevance or implausible ones. We do not set in stone THE pre-processing pipeline that you should use, as that may be application and data dependent, rather we give guidelines on what transformations your `EEG` structure should go through before using `pop_forwardModel` or `pop_inverseSolution`:
+As with any signal processing method, the pre-processing we do before computing the forward and inverse solutions is critical and can make the difference between estimating source maps with physiologic relevance or implausible ones. We do not set in stone the pre-processing pipeline that you should use, as that may be application and data dependent, rather we give guidelines on what transformations your `EEG` structure should go through before using `pop_forwardModel` or `pop_inverseSolution`:
 
 * Remove DC component from each channel, this can be accomplished by applying a low-pass filter, removing the mean, or detrending the data.
 * Remove bad channels.

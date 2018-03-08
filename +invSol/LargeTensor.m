@@ -8,20 +8,24 @@ classdef LargeTensor < handle
     methods
         function self = LargeTensor(dims, filename)
             if nargin < 1, error('Tensor size is the first argument! Example:  a = LargeTensor([2,3,4]);');end
-            if nargin < 2, 
+            if nargin < 2
                 filename = tempname;
-                create_file = true;
-            else
-                create_file = false;
             end
             self.file = filename;
-            if create_file
-                if strfind(lower(computer),'glnx')>0
+            if ~exist(self.file,'file')
+                try
                     rt = system(['fallocate -l ' num2str(prod(dims)*8) ' ' self.file]);
-                elseif strfind(lower(computer),'pcwin')>0
-                    rt = system(['fsutil file createnew ' self.file ' length ' num2str(prod(dims)*8)]);
+                    if rt ~=0, error('fallocate is not installed.');end
+                catch 
+                    disp('Creating mmf file...')
+                    fid = fopen(self.file,'w');
+                    z = zeros(prod(dims(setdiff(1:length(dims),2))),1);
+                    for k=1:dims(2)
+                        fwrite(fid, z, 'double');
+                    end
+                    fclose(fid);
+                    disp('done.')
                 end
-                if rt ~=0, error('Cannot create a memory mapped file. Try increasing disk space on /tmp.');end
             end
             self.mmf = memmapfile(self.file,'Format',{'double' dims 'x'},'Writable',true);
         end
@@ -35,18 +39,33 @@ classdef LargeTensor < handle
                 if exist(bin,'file'), delete(bin);end
             end
         end
-        function slice = subsref(self,s)
-            if length(s)==1
-                slice = subsref(self.mmf.Data.x,s);
-            else
-                slice = self.mmf.Data.x(s(end).subs{1},s(end).subs{2});
+        function slice = subsref(self,s) %#ok
+            ind = '';
+            n = length(s.subs);
+            for k=1:n
+                if ischar(s.subs{k})
+                    ind = [ind s.subs{k}];
+                else
+                    ind = [ind '[' num2str(s.subs{k}) ']'];
+                end
+                if k<n
+                    ind(end+1) = ',';
+                end
             end
+            cmd = ['slice=self.mmf.Data.x(' ind ');'];
+            eval(cmd);
         end
-        function slice = subsasgn(self,s,value) 
-            ind = s(end).subs{2};
-            for k=1:length(ind)
-                self.mmf.Data.x(:,ind(k)) = value(:,k);
+        function slice = subsasgn(self,s,value) %#ok
+            ind = '';
+            for k=1:length(s.subs)
+                if ischar(s.subs{k})
+                    ind = [ind s.subs{k}];
+                else
+                    ind = [ind ',[' num2str(s.subs{k}) ']'];
+                end
             end
+            cmd = ['self.mmf.Data.x(' ind ') = value;'];
+            eval(cmd);
             slice = self;
             % slice = subsasgn(self.mmf.Data.x,s,value);
         end
