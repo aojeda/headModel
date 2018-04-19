@@ -131,46 +131,47 @@ classdef headModel < handle
             hFigureObj = vis.currentSourceViewer(obj,J,V,figureTitle, autoscale, fps, time);
         end
         %%
-        function h = plotMontage(obj,showNewfig)
+        function h = plotMontage(obj,showNewfig, ax)
             % Plots a figure with the xyz distribution of sensors, fiducial landmarks, and
             % coordinate axes.
 
             if isempty(obj.channelSpace) || isempty(obj.labels);error('"channelSpace or "labels" are empty.');end
             if nargin < 2, showNewfig = true;end
+            if nargin < 3, ax = gca;end
             color = [0.93 0.96 1];
             if showNewfig, figure('Color',color);end
             h = scatter3(obj.channelSpace(:,1),obj.channelSpace(:,2),obj.channelSpace(:,3),'filled',...
-                'MarkerEdgeColor','k','MarkerFaceColor','y','parent',gca);
-            hold on;
+                'MarkerEdgeColor','k','MarkerFaceColor','y','parent',ax);
+            hold(ax,'on');
             N = length(obj.labels);
             k = 1.1;
-            for it=1:N, text('Position',k*obj.channelSpace(it,:),'String',obj.labels{it});end
+            for it=1:N, text(ax,'Position',k*obj.channelSpace(it,:),'String',obj.labels{it});end
             mx = max(obj.channelSpace);
             k = 1.2;
-            line([0 k*mx(1)],[0 0],[0 0],'LineStyle','-.','Color','b','LineWidth',2)
-            line([0 0],[0 k*mx(2)],[0 0],'LineStyle','-.','Color','g','LineWidth',2)
-            line([0 0],[0 0],[0 k*mx(3)],'LineStyle','-.','Color','r','LineWidth',2)
-            text('Position',[k*mx(1) 0 0],'String','X','FontSize',12,'FontWeight','bold','Color','b')
-            text('Position',[0 k*mx(2) 0],'String','Y','FontSize',12,'FontWeight','bold','Color','g')
-            text('Position',[0 0 k*mx(3)],'String','Z','FontSize',12,'FontWeight','bold','Color','r')
+            line(ax,[0 k*mx(1)],[0 0],[0 0],'LineStyle','-.','Color','b','LineWidth',2)
+            line(ax,[0 0],[0 k*mx(2)],[0 0],'LineStyle','-.','Color','g','LineWidth',2)
+            line(ax,[0 0],[0 0],[0 k*mx(3)],'LineStyle','-.','Color','r','LineWidth',2)
+            text(ax,'Position',[k*mx(1) 0 0],'String','X','FontSize',12,'FontWeight','bold','Color','b')
+            text(ax,'Position',[0 k*mx(2) 0],'String','Y','FontSize',12,'FontWeight','bold','Color','g')
+            text(ax,'Position',[0 0 k*mx(3)],'String','Z','FontSize',12,'FontWeight','bold','Color','r')
 
             try %#ok
-                scatter3(obj.fiducials.nasion(1),obj.fiducials.nasion(2),obj.fiducials.nasion(3),'filled','MarkerEdgeColor','k','MarkerFaceColor','K');
-                text('Position',1.1*obj.fiducials.nasion,'String','Nas','FontSize',12,'FontWeight','bold','Color','k');
-                scatter3(obj.fiducials.lpa(1),obj.fiducials.lpa(2),obj.fiducials.lpa(3),'filled','MarkerEdgeColor','k','MarkerFaceColor','K');
-                text('Position',1.1*obj.fiducials.lpa,'String','LPA','FontSize',12,'FontWeight','bold','Color','k');
-                scatter3(obj.fiducials.rpa(1),obj.fiducials.rpa(2),obj.fiducials.rpa(3),'filled','MarkerEdgeColor','k','MarkerFaceColor','K');
-                text('Position',1.1*obj.fiducials.rpa,'String','RPA','FontSize',12,'FontWeight','bold','Color','k');
-                scatter3(obj.fiducials.vertex(1),obj.fiducials.vertex(2),obj.fiducials.vertex(3),'filled','MarkerEdgeColor','k','MarkerFaceColor','K');
-                text('Position',1.1*obj.fiducials.vertex,'String','Ver','FontSize',12,'FontWeight','bold','Color','k');
-                scatter3(obj.fiducials.inion(1),obj.fiducials.inion(2),obj.fiducials.inion(3),'filled','MarkerEdgeColor','k','MarkerFaceColor','K');
-                text('Position',1.1*obj.fiducials.inion,'String','Ini','FontSize',12,'FontWeight','bold','Color','k');
+                scatter3(ax,obj.fiducials.nasion(1),obj.fiducials.nasion(2),obj.fiducials.nasion(3),'filled','MarkerEdgeColor','k','MarkerFaceColor','K');
+                text(ax,'Position',1.1*obj.fiducials.nasion,'String','Nas','FontSize',12,'FontWeight','bold','Color','k');
+                scatter3(ax,obj.fiducials.lpa(1),obj.fiducials.lpa(2),obj.fiducials.lpa(3),'filled','MarkerEdgeColor','k','MarkerFaceColor','K');
+                text(ax,'Position',1.1*obj.fiducials.lpa,'String','LPA','FontSize',12,'FontWeight','bold','Color','k');
+                scatter3(ax,obj.fiducials.rpa(1),obj.fiducials.rpa(2),obj.fiducials.rpa(3),'filled','MarkerEdgeColor','k','MarkerFaceColor','K');
+                text(ax,'Position',1.1*obj.fiducials.rpa,'String','RPA','FontSize',12,'FontWeight','bold','Color','k');
+                scatter3(ax,obj.fiducials.vertex(1),obj.fiducials.vertex(2),obj.fiducials.vertex(3),'filled','MarkerEdgeColor','k','MarkerFaceColor','K');
+                text(ax,'Position',1.1*obj.fiducials.vertex,'String','Ver','FontSize',12,'FontWeight','bold','Color','k');
+                scatter3(ax,obj.fiducials.inion(1),obj.fiducials.inion(2),obj.fiducials.inion(3),'filled','MarkerEdgeColor','k','MarkerFaceColor','K');
+                text(ax,'Position',1.1*obj.fiducials.inion,'String','Ini','FontSize',12,'FontWeight','bold','Color','k');
             end
-            hold off;
-            axis equal
-            axis vis3d
-            grid on;
-            rotate3d
+            hold(ax, 'off');
+            axis(ax,'equal');
+            axis(ax,'vis3d')
+            grid(ax,'on');
+            rotate3d(ax);
         end
         %%
         
