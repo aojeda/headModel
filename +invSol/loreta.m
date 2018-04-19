@@ -23,7 +23,7 @@ classdef loreta < handle
             % Compute the average reference operator
             R = eye(obj.Ny)-ones(obj.Ny)/obj.Ny;
             % Standardize lead field to compensate for depth bias
-            H = obj.stdLeadField(R*hm.K,5);
+            H = bsxfun(@rdivide,hm.K,eps+sqrt(sum(hm.K.^2)));
             [U,S,V] = svd(H(:,obj.srcind)/W(obj.srcind,obj.srcind),'econ');
             obj.Ut = U';
             obj.V = W(obj.srcind,obj.srcind)\V;
