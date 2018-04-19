@@ -386,7 +386,7 @@ classdef headModel < handle
             dlmwrite(electrodesFile, obj.channelSpace, 'precision', 6,'delimiter',' ')
             c4 = onCleanup(@()delete(electrodesFile));
 
-            normalsIn = false;
+            normalsIn = true;
             brain = fullfile(tmpDir,'brain.tri');
             [normals,obj.inskull.faces] = geometricTools.getSurfaceNormals(obj.inskull.vertices,obj.inskull.faces,normalsIn);
             om_save_tri(brain,obj.inskull.vertices,obj.inskull.faces,normals)
