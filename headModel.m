@@ -167,6 +167,9 @@ classdef headModel < handle
                 scatter3(ax,obj.fiducials.inion(1),obj.fiducials.inion(2),obj.fiducials.inion(3),'filled','MarkerEdgeColor','k','MarkerFaceColor','K');
                 text(ax,'Position',1.1*obj.fiducials.inion,'String','Ini','FontSize',12,'FontWeight','bold','Color','k');
             end
+            skinColor = [1 0.75 0.65];
+            patch('vertices',obj.scalp.vertices,'faces',obj.scalp.faces,'facecolor',skinColor,...
+                'facelighting','phong','LineStyle','none','FaceAlpha',0.25,'Parent',ax,'Visible','on');
             hold(ax, 'off');
             axis(ax,'equal');
             axis(ax,'vis3d')
