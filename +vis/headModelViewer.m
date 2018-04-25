@@ -42,8 +42,11 @@ classdef headModelViewer < handle
             roiModeOff  = imread([path filesep 'selectRoiOff.svg.png']);
             lrBrain = imread([path filesep 'lr_brain.png']);
             
-            [~,~, obj.leftH, obj.rightH] = geometricTools.splitBrainHemispheres(hmObj.cortex);
-
+            if isempty(hmObj.leftH)
+                [hmObj.fvLeft,hmObj.fvRight, hmObj.leftH, hmObj.rightH] = geometricTools.splitBrainHemispheres(hmObj.cortex); 
+            end
+            obj.leftH = hmObj.leftH;
+            obj.rightH = hmObj.rightH;
             obj.hFigure = figure('Menubar','figure','ToolBar','figure','renderer','opengl','Visible','on','Color',color,'Name','Head model');
             position = get(obj.hFigure,'position');
             set(obj.hFigure,'position',[position(1:2) 648 490]);
@@ -114,9 +117,15 @@ classdef headModelViewer < handle
             
             % cortex
             if ~isempty(obj.hmObj.atlas),
-                obj.hCortex = patch('vertices',obj.hmObj.cortex.vertices,'faces',obj.hmObj.cortex.faces,'FaceVertexCData',obj.hmObj.atlas.colorTable,...
-                    'FaceColor','interp','FaceLighting','phong','LineStyle','none','FaceAlpha',1,'SpecularColorReflectance',0,...
-                    'SpecularExponent',50,'SpecularStrength',0.5,'Parent',obj.hAxes);
+                if isfield(obj.hmObj.atlas,'color')
+                    obj.hCortex = patch('vertices',obj.hmObj.cortex.vertices,'faces',obj.hmObj.cortex.faces,'FaceVertexCData',obj.hmObj.atlas.color,...
+                        'FaceColor','interp','FaceLighting','phong','LineStyle','none','FaceAlpha',1,'SpecularColorReflectance',0,...
+                        'SpecularExponent',50,'SpecularStrength',0.5,'Parent',obj.hAxes);
+                else
+                    obj.hCortex = patch('vertices',obj.hmObj.cortex.vertices,'faces',obj.hmObj.cortex.faces,'FaceVertexCData',obj.hmObj.atlas.colorTable,...
+                        'FaceColor','interp','FaceLighting','phong','LineStyle','none','FaceAlpha',1,'SpecularColorReflectance',0,...
+                        'SpecularExponent',50,'SpecularStrength',0.5,'Parent',obj.hAxes);
+                end
                 camlight(0,180)
                 camlight(0,0)
             else

@@ -11,10 +11,17 @@ classdef headModel < handle
         inskull = []'
         outskull = [];
         scalp = [];
+        cortexNormals = [];
         fiducials = []; % xyz of the fiducial landmarks: nassion, lpa, rpa, vertex, and inion.
         atlas           % Atlas that labels each vertex in the most internal surface (gray matter).
         K = [];         % Lead field matrix
         L = [];         % Laplacian operator
+    end
+    properties(Hidden)
+        fvLeft
+        fvRight
+        leftH
+        rightH
     end
     properties(GetAccess = private, SetAccess = private, Hidden)
         F = [];
@@ -369,14 +376,19 @@ classdef headModel < handle
             c2 = onCleanup(@()delete(headModelConductivity));
 
             dipolesFile = fullfile(tmpDir,[rname '_dipoles.txt']);
-            normalsIn = true;
-            [normals,obj.cortex.faces] = geometricTools.getSurfaceNormals(obj.cortex.vertices,obj.cortex.faces,normalsIn);
+            
+            if isempty(obj.cortexNormals)
+                normalsIn = true;
+                [normals,obj.cortex.faces] = geometricTools.getSurfaceNormals(obj.cortex.vertices,obj.cortex.faces,normalsIn);
+            else
+                normals = obj.cortexNormals;
+            end
 
             normalityConstrained = ~orientation;
             if normalityConstrained
                 sourceSpace = [obj.cortex.vertices normals];
             else
-                One = ones(length(normals(:,2)),1);
+                One = ones(length(normals(:,2)),1)*norm(obj.cortex.vertices)/sqrt(size(obj.cortex.vertices,1));
                 Zero = 0*One;
                 sourceSpace = [obj.cortex.vertices One Zero Zero;...
                     obj.cortex.vertices Zero One Zero;...
