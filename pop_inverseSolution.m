@@ -49,12 +49,9 @@ labels_eeg = {EEG.chanlocs.labels};
 EEG = pop_select(EEG,'channel',loc);
 
 % Initialize the inverse solver
-sc = 1;
-if norm(hm.K)>1000
-    sc = 1000;
-    hm.K = hm.K/sc;
-    hm.L = hm.L/sc;
-end
+norm_K = norm(hm.K);
+hm.K = hm.K/norm_K;
+hm.L = hm.L/norm_K;
 Ndipoles = size(hm.cortex.vertices,1);
 Nx = size(hm.K,2);
 if strcmpi(solverType,'loreta')
@@ -128,13 +125,13 @@ for trial=1:EEG.trials
         loc(loc>EEG.pnts) = [];
         if isempty(loc), break;end
         if length(loc) < windowSize
-            X(:,loc,trial) = sc*solver.update(EEG.data(:,loc,trial));
+            X(:,loc,trial) = solver.update(EEG.data(:,loc,trial));
             X_roi(:,loc,trial) = P*X(:,loc,trial);
             break;
         end
         
         % Source estimation
-        Xtmp = sc*solver.update(EEG.data(:,loc,trial));
+        Xtmp = solver.update(EEG.data(:,loc,trial));
         
         % Stitch windows
         if k>1 && windowSize > 1
@@ -163,7 +160,6 @@ fprintf('Done!\n');
 EEG.etc.src.act = X_roi;
 EEG.etc.src.roi = hm.atlas.label;
 EEG.data = EEG.data;
-EEG.etc.src.act = EEG.etc.src.act;
 if saveFull
     try
         EEG.etc.src.actFull = X;
