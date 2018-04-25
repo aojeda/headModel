@@ -12,7 +12,8 @@ classdef currentSourceViewer < handle
         hLabels
         hSensors
         hScalp
-        hCortex
+        hCortexL
+        hCortexR
         hVectorL
         hVectorR
         dcmHandle
@@ -72,6 +73,12 @@ classdef currentSourceViewer < handle
             J = double(J);
             V = double(V);
             
+            if isempty(hmObj.leftH)
+                [hmObj.fvLeft,hmObj.fvRight, hmObj.leftH, hmObj.rightH] = geometricTools.splitBrainHemispheres(hmObj.cortex);
+            end
+            obj.leftH = hmObj.leftH;
+            obj.rightH = hmObj.rightH;
+            
             [~,~, obj.leftH, obj.rightH] = geometricTools.splitBrainHemispheres(hmObj.cortex);
             obj.playIcon = play;
             obj.pauseIcon = pause;
@@ -91,14 +98,11 @@ classdef currentSourceViewer < handle
             hcb(2) = uitoggletool(toolbarHandle,'CData',sensorsOff,'Separator','off','HandleVisibility','off','TooltipString','Sensors On/Off','userData',{sensorsOn,sensorsOff},'State','off');
             set(hcb(2),'OnCallback',@(src,event)rePaint(obj,hcb(2),'sensorsOn'),'OffCallback',@(src, event)rePaint(obj,hcb(2),'sensorsOff'));
 
-            hcb(3) = uitoggletool(toolbarHandle,'CData',scalpOff,'Separator','off','HandleVisibility','off','TooltipString','Scalp On/Off','userData',{scalpOn,scalpOff},'State','off');
-            set(hcb(3),'OnCallback',@(src,event)rePaint(obj,hcb(3),'scalpOn'),'OffCallback',@(src, event)rePaint(obj,hcb(3),'scalpOff'));
+            hcb(3) = uitoggletool(toolbarHandle,'CData',vectorOff,'Separator','off','HandleVisibility','off','TooltipString','Vectors On/Off','userData',{vectorOn,vectorOff},'State','off');
+            set(hcb(3),'OnCallback',@(src,event)rePaint(obj,hcb(3),'vectorOn'),'OffCallback',@(src, event)rePaint(obj,hcb(3),'vectorOff'));
 
-            hcb(4) = uitoggletool(toolbarHandle,'CData',vectorOff,'Separator','off','HandleVisibility','off','TooltipString','Vectors On/Off','userData',{vectorOn,vectorOff},'State','off');
-            set(hcb(4),'OnCallback',@(src,event)rePaint(obj,hcb(4),'vectorOn'),'OffCallback',@(src, event)rePaint(obj,hcb(4),'vectorOff'));
-
-            hcb(5) = uitoggletool(toolbarHandle,'CData',lrBrain,'Separator','off','HandleVisibility','off','TooltipString','View left/right hemisphere','State','off');
-            set(hcb(5),'OnCallback',@(src,event)viewHemisphere(obj,hcb(5)),'OffCallback',@(src, event)viewHemisphere(obj,hcb(5)));
+            hcb(4) = uitoggletool(toolbarHandle,'CData',lrBrain,'Separator','off','HandleVisibility','off','TooltipString','View left/right hemisphere','State','off');
+            set(hcb(4),'OnCallback',@(src,event)viewHemisphere(obj,hcb(4)),'OffCallback',@(src, event)viewHemisphere(obj,hcb(4)));
 
             uipushtool(toolbarHandle,'CData',prev,'Separator','on','HandleVisibility','off','TooltipString','Previous','ClickedCallback',@obj.prev);
             uipushtool(toolbarHandle,'CData',next,'Separator','on','HandleVisibility','off','TooltipString','Next','ClickedCallback',@obj.next);
@@ -132,6 +136,8 @@ classdef currentSourceViewer < handle
             obj.dcmHandle.SnapToDataVertex = 'off';
             set(obj.dcmHandle,'UpdateFcn',@(src,event)showLabel(obj,event));
             obj.dcmHandle.Enable = 'off';
+            addlistener(obj.dcmHandle,'Enable','PostSet',@obj.dataCursorSet);
+            
             hold(obj.hAxes,'on');
 
             obj.hSensors = scatter3(obj.hAxes,obj.hmObj.channelSpace(:,1),obj.hmObj.channelSpace(:,2),...
@@ -162,7 +168,7 @@ classdef currentSourceViewer < handle
             obj.is3d = ndims(obj.sourceOrientation) > 2;
             
             disp('Calibrating the source color scale...')
-            mx = obj.getRobustLimits(obj.sourceMagnitud(:),0.1);
+            mx = obj.getRobustLimits(obj.sourceMagnitud(:),0.5);
             obj.clim.source = [-mx mx];
             set(obj.hAxes,'Clim',obj.clim.source);
             disp('Done.')
@@ -175,7 +181,11 @@ classdef currentSourceViewer < handle
             set([obj.hVectorL obj.hVectorR],'Color','k','Visible','off','LineWidth',0.5);
 
             % cortex
-            obj.hCortex = patch('vertices',obj.hmObj.cortex.vertices,'faces',obj.hmObj.cortex.faces,'FaceVertexCData',obj.sourceMagnitud(:,1),...
+            obj.hCortexL = patch('vertices',obj.hmObj.fvLeft.vertices,'faces',obj.hmObj.fvLeft.faces,'FaceVertexCData',obj.sourceMagnitud(obj.hmObj.leftH,1),...
+                'FaceColor','interp','FaceLighting','phong','LineStyle','none','FaceAlpha',obj.cortexAlpha.Value,'SpecularColorReflectance',0,...
+                'SpecularExponent',25,'SpecularStrength',0.25,'Parent',obj.hAxes);
+            
+            obj.hCortexR = patch('vertices',obj.hmObj.fvRight.vertices,'faces',obj.hmObj.fvRight.faces,'FaceVertexCData',obj.sourceMagnitud(obj.hmObj.rightH,1),...
                 'FaceColor','interp','FaceLighting','phong','LineStyle','none','FaceAlpha',obj.cortexAlpha.Value,'SpecularColorReflectance',0,...
                 'SpecularExponent',25,'SpecularStrength',0.25,'Parent',obj.hAxes);
             camlight(0,180)
@@ -257,16 +267,31 @@ classdef currentSourceViewer < handle
         end
         %%
         function viewHemisphere(obj,~)
-            val = obj.sourceMagnitud(:,obj.pointer);
             obj.lrState = obj.lrState+1;
+            obj.lrState(obj.lrState>2) = 0;
             switch obj.lrState
                 case 1
-                    val(obj.rightH) = nan;
+                    obj.hCortexR.Visible = 'off';
+                    obj.hCortexL.Visible = 'on';
+                    
+                    if strcmp(obj.hVectorR.Visible,'on')
+                        obj.hVectorR.Visible = 'off';
+                    end
                 case 2
-                    val(obj.leftH) = nan;
+                    obj.hCortexR.Visible = 'on';
+                    obj.hCortexL.Visible = 'off';
+                    
+                    if strcmp(obj.hVectorL.Visible,'on')
+                        obj.hVectorL.Visible = 'off';
+                    end
+                otherwise
+                    obj.hCortexR.Visible = 'on';
+                    obj.hCortexL.Visible = 'on';
+                    if strcmp(obj.hVectorL.Visible,'on') || strcmp(obj.hVectorR.Visible,'on')
+                        obj.hVectorR.Visible = 'on';
+                        obj.hVectorL.Visible = 'on';
+                    end
             end
-            if obj.lrState > 2; obj.lrState = 0;end
-            set(obj.hCortex,'FaceVertexCData',val);
         end
        %%
         function rePaint(obj,hObject,opt)
@@ -385,25 +410,12 @@ classdef currentSourceViewer < handle
             if obj.pointer < 1, obj.pointer = 1;end
             val = obj.sourceMagnitud(:,obj.pointer);
 
-            switch obj.lrState
-                case 1
-                    val(obj.rightH) = nan;
-                    if strcmp(obj.hVectorR.Visible,'on') || strcmp(obj.hVectorL.Visible,'on')
-                        obj.hVectorR.Visible = 'off';
-                        obj.hVectorL.Visible = 'on';
-                    end
-                case 2
-                    val(obj.leftH) = nan;
-                    if strcmp(obj.hVectorR.Visible,'on') || strcmp(obj.hVectorL.Visible,'on')
-                        obj.hVectorR.Visible = 'on';
-                        obj.hVectorL.Visible = 'off';
-                    end
-            end
             if obj.is3d
                 set(obj.hVectorL,'UData',obj.sourceOrientation(obj.leftH,1,obj.pointer),'VData',obj.sourceOrientation(obj.leftH,2,obj.pointer),'WData',obj.sourceOrientation(obj.leftH,3,obj.pointer));
                 set(obj.hVectorR,'UData',obj.sourceOrientation(obj.rightH,1,obj.pointer),'VData',obj.sourceOrientation(obj.rightH,2,obj.pointer),'WData',obj.sourceOrientation(obj.rightH,3,obj.pointer));
             end
-            set(obj.hCortex,'FaceVertexCData',val);
+            set(obj.hCortexL,'FaceVertexCData',val(obj.leftH));
+            set(obj.hCortexR,'FaceVertexCData',val(obj.rightH));
             set(obj.hFigure,'Name',[obj.figureName '  ' sprintf('%f msec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
             if isempty(obj.scalpData), drawnow;return;end
             val = obj.scalpData(:,obj.pointer);
@@ -421,14 +433,23 @@ classdef currentSourceViewer < handle
             obj.next;
         end
         function setCortexAlpha(obj,~,~)
-            obj.hCortex.FaceAlpha = obj.cortexAlpha.Value;
+            obj.hCortexL.FaceAlpha = obj.cortexAlpha.Value;
+            obj.hCortexR.FaceAlpha = obj.cortexAlpha.Value;
         end
         function setScalpAlpha(obj,~,~)
             obj.hScalp.FaceAlpha = obj.scalpAlpha.Value;
+            if obj.scalpAlpha.Value==0
+                obj.hScalp.Visible = 'off';
+            else
+                obj.hScalp.Visible = 'on';
+            end
         end
         function setTimeCursor(obj, ~, ~)
             obj.pointer = round(obj.timeCursor.Value)-1;
             obj.next;
+        end
+        function dataCursorSet(obj, src, evnt)
+            return;
         end
     end
 end
