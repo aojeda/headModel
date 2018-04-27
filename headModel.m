@@ -635,6 +635,11 @@ classdef headModel < handle
             inputParameters = inputParameters(:)';
             obj = headModel(inputParameters(:));
         end
+        function obj = loadDefault()
+            template = which('head_modelColin27_5003_Standard-10-5-Cap339-Destrieux148.mat');
+            obj = headModel.loadFromFile(template);
+        end
+        
     end
     methods(Static, Hidden)
         function fileContent = loadFromFile_old(file)
