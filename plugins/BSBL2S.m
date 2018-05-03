@@ -161,6 +161,7 @@ classdef BSBL2S < handle
             if strcmp(obj.options.profile,'on'), t0 = clock;end
             obj.history.loss_F(1) = -2*obj.compute_logE(Y);
             if strcmp(obj.options.profile,'on'), obj.history.itime_F(1) = etime(clock, t0);end
+            obj.gamma(:) = obj.gamma_F;
             for k=2:obj.options.stage1.maxIter
                 if strcmp(obj.options.profile,'on'), t0 = clock;end
                 psi = obj.gamma_F*s2+obj.lambda;
@@ -297,9 +298,8 @@ classdef BSBL2S < handle
             Zero = sparse(Nx,Nx);
             for k=1:Nroi
                 W = hm.L(blocks(:,k),blocks(:,k));
-                W = W*W';
                 sqrtPriorCov{k} = Zero;
-                sqrtPriorCov{k}(blocks(:,k),blocks(:,k)) = W;
+                sqrtPriorCov{k}(blocks(:,k),blocks(:,k)) = inv(W);
                 PriorCov{k} = sqrtPriorCov{k}*sqrtPriorCov{k}';
             end
         end
