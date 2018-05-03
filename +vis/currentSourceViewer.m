@@ -205,10 +205,14 @@ classdef currentSourceViewer < handle
                 disp('Done.')
                 
                 obj.scalpData = zeros(size(obj.hmObj.scalp.vertices,1),size(V,2));
-                for k=1:size(V,2)
+                nt = size(V,2);
+                fprintf('Interpolating scalp data');
+                for k=1:nt
                      F = scatteredInterpolant(obj.hmObj.channelSpace,V(:,k),'natural','linear');
                     obj.scalpData(:,k) = F(obj.hmObj.scalp.vertices);
+                    if mod(k,100)==0, fprintf('.');end
                 end
+                fprintf('done\n');
                 obj.scalpData = obj.clim.source(2)*obj.scalpData/mx;
                 indz = obj.hmObj.scalp.vertices(:,3) < min(obj.hmObj.channelSpace(:,3)) - 0.1*abs(min(obj.hmObj.channelSpace(:,3)));
                 obj.scalpData(indz,:) = 0;

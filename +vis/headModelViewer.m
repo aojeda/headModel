@@ -8,7 +8,8 @@ classdef headModelViewer < handle
         hSensors
         hScalp
         hSkull
-        hCortex
+        hCortexL
+        hCortexR
         dcmHandle
         roiLabels = {};
     end
@@ -116,23 +117,18 @@ classdef headModelViewer < handle
             end
             
             % cortex
-            if ~isempty(obj.hmObj.atlas),
-                if isfield(obj.hmObj.atlas,'color')
-                    obj.hCortex = patch('vertices',obj.hmObj.cortex.vertices,'faces',obj.hmObj.cortex.faces,'FaceVertexCData',obj.hmObj.atlas.color,...
-                        'FaceColor','interp','FaceLighting','phong','LineStyle','none','FaceAlpha',1,'SpecularColorReflectance',0,...
-                        'SpecularExponent',50,'SpecularStrength',0.5,'Parent',obj.hAxes);
-                else
-                    obj.hCortex = patch('vertices',obj.hmObj.cortex.vertices,'faces',obj.hmObj.cortex.faces,'FaceVertexCData',obj.hmObj.atlas.colorTable,...
-                        'FaceColor','interp','FaceLighting','phong','LineStyle','none','FaceAlpha',1,'SpecularColorReflectance',0,...
-                        'SpecularExponent',50,'SpecularStrength',0.5,'Parent',obj.hAxes);
-                end
-                camlight(0,180)
-                camlight(0,0)
-            else
-                obj.hCortex = patch('vertices',obj.hmObj.cortex.vertices,'faces',obj.hmObj.cortex.faces,'facecolor','green',...
-                    'FaceLighting','gouraud','LineStyle','-','LineWidth',.005,'EdgeColor',[.3 .3 .3],'AmbientStrength',.4,...
-                    'FaceAlpha',1,'SpecularColorReflectance',0,'SpecularExponent',50,'SpecularStrength',0.5,'Parent',obj.hAxes);
-            end
+            color = obj.getAtlasColor();
+            obj.hCortexL = patch('vertices',obj.hmObj.fvLeft.vertices,'faces',obj.hmObj.fvLeft.faces,'FaceVertexCData',color(obj.hmObj.leftH,:),...
+                'FaceColor','interp','FaceLighting','phong','LineStyle','none','FaceAlpha',1,'SpecularColorReflectance',0,...
+                'SpecularExponent',50,'SpecularStrength',0.5,'Parent',obj.hAxes);
+            
+            obj.hCortexR = patch('vertices',obj.hmObj.fvRight.vertices,'faces',obj.hmObj.fvRight.faces,'FaceVertexCData',color(obj.hmObj.rightH,:),...
+                'FaceColor','interp','FaceLighting','phong','LineStyle','none','FaceAlpha',1,'SpecularColorReflectance',0,...
+                'SpecularExponent',50,'SpecularStrength',0.5,'Parent',obj.hAxes);
+            
+            camlight(0,180)
+            camlight(0,0)
+            
             % skull
             obj.hSkull = patch('vertices',obj.hmObj.outskull.vertices,'faces',obj.hmObj.outskull.faces,'facecolor','white',...
                 'facelighting','phong','LineStyle','none','FaceAlpha',.45,'Parent',obj.hAxes);
@@ -178,19 +174,24 @@ classdef headModelViewer < handle
                     set(obj.hSkull,'Visible','on');
                 case 'skullOff'
                     set(obj.hSkull,'Visible','off');
-                case 'cortexOn'
-                    set(obj.hCortex,'Visible','on');
-                case 'cortexOff'
-                    set(obj.hCortex,'Visible','off');
                 case 'atlasOn'
-                    set(obj.hCortex,'FaceVertexCData',obj.hmObj.atlas.colorTable,'LineStyle','none','FaceColor','interp');
+                    color = obj.getAtlasColor();
+                    set(obj.hCortexL,'FaceVertexCData',color(obj.hmObj.leftH,:),'LineStyle','none','FaceColor','interp');
+                    set(obj.hCortexR,'FaceVertexCData',color(obj.hmObj.rightH,:),'LineStyle','none','FaceColor','interp');
                 case 'atlasOff'
-                    set(obj.hCortex,'FaceColor',[1,.75,.65],'LineStyle','-');
+                    set([obj.hCortexL obj.hCortexR],'FaceColor',[1,.75,.65],'LineStyle','-');
                 case 'roiModeOn'
                     set(obj.dcmHandle,'UpdateFcn',@(src,event)showLabel(obj,event,true));
                     obj.roiLabels = {};
                 case 'roiModeOff'
                     set(obj.dcmHandle,'UpdateFcn',@(src,event)showLabel(obj,event,false));
+            end
+        end
+        function color = getAtlasColor(obj)
+            if isfield(obj.hmObj.atlas,'color')
+                color = obj.hmObj.atlas.color;
+            else
+                color = length(obj.hmObj.atlas.label);
             end
         end
         %%
@@ -209,19 +210,21 @@ classdef headModelViewer < handle
         end
         %%
         function viewHemisphere(obj,~)
-            if isempty(obj.FaceVertexCData)
-                obj.FaceVertexCData = get(obj.hCortex,'FaceVertexCData');
-            end
-            val = obj.FaceVertexCData;
             obj.lrState = obj.lrState+1;
+            obj.lrState(obj.lrState>2) = 0;
             switch obj.lrState
                 case 1
-                    val(obj.rightH,:) = nan;
+                    obj.hCortexR.Visible = 'off';
+                    obj.hCortexL.Visible = 'on';
+                    
                 case 2
-                    val(obj.leftH,:) = nan;
+                    obj.hCortexR.Visible = 'on';
+                    obj.hCortexL.Visible = 'off';
+                    
+                otherwise
+                    obj.hCortexR.Visible = 'on';
+                    obj.hCortexL.Visible = 'on';
             end
-            if obj.lrState > 2; obj.lrState = 0;end
-            set(obj.hCortex,'FaceVertexCData',val);
         end
     end
 end
