@@ -14,7 +14,7 @@ if isempty(which('meshresample'))
         indices = faces(ind,:);
         indices = indices(:);
         indices(indices==it) = [];
-        W = geometricTools.localGaussianInterpolator(vertices(indices,:),vertices(it,:),10);
+        W = geometricTools.localGaussianInterpolator(vertices(indices,:),vertices(it,:),lambda);
         sVertices(it,:) = sum((1./W)*vertices(indices,:),1)./sum(1./W);
     end
     return;
