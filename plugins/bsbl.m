@@ -9,7 +9,12 @@ else
     options.stage2.verbose = false;
     options.stage1.maxIter = 20;
     options.stage2.maxIter = 20;
-    %hm.removeAverageReference;
+    
+    % Std lead field
+    norm_K = norm(hm.K);
+    hm.K = hm.K/norm_K;
+    hm.L = hm.L/norm_K;
+    hm.K = bsxfun(@rdivide,hm.K,std(hm.K,[],1));
     
     % Get covariance components
     [PriorCov,sqrtPriorCov,blocks] = BSBL2S.hm2cc(hm);
