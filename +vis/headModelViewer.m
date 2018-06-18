@@ -191,7 +191,9 @@ classdef headModelViewer < handle
             if isfield(obj.hmObj.atlas,'color')
                 color = obj.hmObj.atlas.color;
             else
-                color = length(obj.hmObj.atlas.label);
+                colorTmp = jet(length(obj.hmObj.atlas.label));
+                color = ones(size(obj.hmObj.K,2),3);
+                color(obj.hmObj.atlas.colorTable~=0,:) = colorTmp(obj.hmObj.atlas.colorTable(obj.hmObj.atlas.colorTable~=0),:);
             end
         end
         %%

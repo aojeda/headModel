@@ -167,11 +167,11 @@ classdef currentSourceViewer < handle
             obj.Nframes = num2str(size(obj.sourceMagnitud,2));
             obj.is3d = ndims(obj.sourceOrientation) > 2;
             
-            disp('Calibrating the source color scale...')
+            fprintf('Calibrating the source color scale... ')
             mx = obj.getRobustLimits(obj.sourceMagnitud(:),0.5);
             obj.clim.source = [-mx mx];
             set(obj.hAxes,'Clim',obj.clim.source);
-            disp('Done.')
+            fprintf('done\n')
             
             % vectors
             obj.hVectorL = quiver3(obj.hmObj.cortex.vertices(obj.leftH,1),obj.hmObj.cortex.vertices(obj.leftH,2),obj.hmObj.cortex.vertices(obj.leftH,3),...
@@ -199,14 +199,14 @@ classdef currentSourceViewer < handle
                 obj.scalpData = [];
                 obj.clim.scalp = obj.clim.source;
             else
-                disp('Calibrating the scalp color scale...')
+                fprintf('Calibrating the scalp color scale... ')
                 mx = obj.getRobustLimits(V,0.1);
                 obj.clim.scalp = [-mx mx];
-                disp('Done.')
+                fprintf('done\n')
                 
                 obj.scalpData = zeros(size(obj.hmObj.scalp.vertices,1),size(V,2));
                 nt = size(V,2);
-                fprintf('Interpolating scalp data');
+                fprintf('Interpolating scalp data... ');
                 for k=1:nt
                      F = scatteredInterpolant(obj.hmObj.channelSpace,V(:,k),'natural','linear');
                     obj.scalpData(:,k) = F(obj.hmObj.scalp.vertices);
@@ -265,7 +265,7 @@ classdef currentSourceViewer < handle
                 mx = max(abs([mx mn]));
                 mn = -mx;
             else
-                mx = prctile(abs(vect),100-th);
+                mx = prctile(abs(nonzeros(vect)),100-th);
                 mn = -mx;
             end
         end
