@@ -508,6 +508,21 @@ classdef headModel < handle
 
         end
        %%
+       function transform2MNI(obj)
+           M = [...
+               cos(pi/2)  sin(pi/2) 0  0;...
+               sin(pi/2)  cos(pi/2) 0 -0.0322;...
+               0          0         1 -0.0414;...
+               0          0         0 1];
+           s = [1000*[1 1 1] 0];
+           M = diag(s)*M;
+           obj.cortex.vertices   = (M*[obj.cortex.vertices   ones(size(obj.cortex.vertices,1),1)]')';   obj.cortex.vertices(:,4)   = [];
+           obj.inskull.vertices  = (M*[obj.inskull.vertices  ones(size(obj.inskull.vertices,1),1)]')';  obj.inskull.vertices(:,4)  = [];
+           obj.outskull.vertices = (M*[obj.outskull.vertices ones(size(obj.outskull.vertices,1),1)]')'; obj.outskull.vertices(:,4) = [];
+           obj.scalp.vertices    = (M*[obj.scalp.vertices    ones(size(obj.scalp.vertices,1),1)]')';    obj.scalp.vertices(:,4)    = [];
+           obj.channelSpace      = (M*[obj.channelSpace      ones(size(obj.channelSpace,1),1)]')';      obj.channelSpace(:,4)      = [];
+       end
+       %%
         function [sourceSpace,rmIndices] = removeStructureFromSourceSpace(obj,structName,maxNumVertices2rm, structIndices)
             if isempty(obj.atlas) || isempty(obj.cortex), error('"atlas" or "cortex" are empty.');end
             if nargin < 2, error('Not enough input arguments.');end
