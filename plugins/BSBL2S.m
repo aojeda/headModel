@@ -39,7 +39,7 @@ classdef BSBL2S < handle
                 error('Use the function hm2cc to generate the input arguments to BSBL2S.');
             end
             if nargin < 5
-                options = ParametricEmpiricalBayes.initOptions();
+                options = BSBL2S.initOptions();
             end
             obj.PriorCov = PriorCov;
             obj.sqrtPriorCov = sqrtPriorCov;
@@ -119,7 +119,7 @@ classdef BSBL2S < handle
             % Compute the log-Evidence
             logE = obj.compute_logE(y);
            
-            % Compute the state
+            % Compute the source map
             x = obj.T(y);
         end
         function x = T(obj,y, iSy)
