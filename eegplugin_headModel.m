@@ -13,8 +13,7 @@
 
 function vers = eegplugin_headModel(fig,try_strings, catch_strings)
 vers = 'headModel1.0.2';
-p = fileparts(which('eeglab'));
-p = fullfile(p, 'plugins', 'headModel');
+p = fileparts(which('eegplugin_headModel'));
 addpath(genpath(p));
 
 h = findobj(gcf, 'tag', 'tools');
