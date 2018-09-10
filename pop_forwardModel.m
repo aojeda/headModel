@@ -1,4 +1,4 @@
-function EEG = pop_forwardModel(EEG, hmfile, conductivity, orientation, recompute)
+function EEG = pop_forwardModel(EEG, templateFile, conductivity, orientation, recompute)
 % Input arguments:
 %       conductivity: conductivity of each layer of tissue, scalp - skull - brain,
 %                     default: 0.33-0.022-0.33 S/m. See [2, 3, 4] for details.
@@ -10,21 +10,14 @@ if isempty(EEG.chanlocs)
 end
 
 % Select template if not provided
-resources = fullfile(fileparts(which('headModel.m')),'resources');
 if nargin < 2
-    [FileName,PathName,FilterIndex] = uigetfile({'*.mat'},'Select template',resources);
-    if ~FilterIndex, return;end
-    hmfile = fullfile(PathName,FileName);
-elseif ~exist(hmfile,'file')
-    [FileName,PathName,FilterIndex] = uigetfile({'*.mat'},'Select template',resources);
-    if ~FilterIndex, return;end
-    hmfile = fullfile(PathName,FileName);
+    templateFile = headModel.getDefaultTemplateFilename();
 end
-if nargin < 2, conductivity = [0.33 0.022 0.33];end
-if nargin < 3, orientation = true;end
-if nargin < 4, recompute = true;end
+if nargin < 3, conductivity = [0.33 0.022 0.33];end
+if nargin < 4, orientation = true;end
+if nargin < 5, recompute = true;end
 
-hm = headModel.loadFromFile(hmfile);
+hm = headModel.loadFromFile(templateFile);
 labels = {EEG.chanlocs.labels};
 xyz = [[EEG.chanlocs.X]' [EEG.chanlocs.Y]' [EEG.chanlocs.Z]'];
 if isempty(xyz)
@@ -79,7 +72,7 @@ try
     % Save the forward model
     hm.saveToFile(hmfile);
     EEG.etc.src.hmfile = hmfile;
-    EEG.history = char(EEG.history,'EEG = pop_forwardModel(EEG, hmfile, conductivity, orientation, recompute);');
+    EEG.history = char(EEG.history,['EEG = pop_forwardModel(EEG, ''' templateFile ''', [' num2str(conductivity) '], ' num2str(orientation) ',' num2str(recompute) ');']);
     disp('The forward model was saved in EEG.etc.src')
 catch ME
     if strcmp(ME.identifier,'OpenMEEG:NoInstalled')

@@ -339,8 +339,11 @@ classdef headModel < handle
             if isempty(obj.scalp) || isempty(obj.outskull) || isempty(obj.inskull) || isempty(obj.cortex),
                 error('The file containing the surfaces is missing.');
             end
+                
+            % Locate OpenMEEG binaries
             if ~isempty(strfind(computer,'PCWIN')) %#ok
-                % Locate OpenMEEG binaries
+                
+                % on Windows
                 if exist('C:\Program Files\OpenMEEG\bin\om_assemble.exe','file')
                     binDir = '"C:\Program Files\OpenMEEG\bin"';
                 elseif exist('C:\Program Files (x86)\OpenMEEG\bin\om_assemble.exe','file')
@@ -348,18 +351,34 @@ classdef headModel < handle
                 elseif exist([pwd '\OpenMEEG\bin\om_assemble.exe'],'file')
                     binDir = [pwd '\OpenMEEG\bin\'];
                 else
-                    binDir = input('Enter the full path to OpenMEEG\bin directory:');
-                    if ~exist(fullfile(binDir,'om_assemble.exe'),'file')
-                        error('OpenMEEG:NoInstalled','Cannot locate OpenMEEG installation directory.\nClick on the link to download and install <a href="https://gforge.inria.fr/frs/?group_id=435">OpenMEEG</a>.');
-                    end
+                    binDir = '';
                 end
-            else                
-                existOM = ~system('which om_assemble');
-                if ~existOM
-                    error('OpenMEEG:NoInstalled','OpenMEEG is not intalled in your system.\nClick on the link to download and install <a href="https://gforge.inria.fr/frs/?group_id=435">OpenMEEG</a>.');
+                
+            elseif ~isempty(strfind(computer,'MACI64')) %#ok
+                
+                % on Mac
+                if exist('/usr/local/bin/om_assemble','file')
+                    binDir = '"/usr/local/bin"';
+                else
+                    binDir = '';
                 end
-                binDir = '';
+            else  
+                [tmp, binFile] = system('which om_assemble');
+                existOM = ~tmp;
+                if existOM
+                    binDir = fileparts(deblank(binFile));
+                else
+                    binDir = '';
+                end
             end
+            
+            if ~exist(binDir,'dir')
+                binDir = input('Enter the full path to OpenMEEG\bin directory:');
+                if ~exist(fullfile(binDir,'om_assemble.exe'),'file')
+                    error('OpenMEEG:NoInstalled','Cannot locate OpenMEEG installation directory.\nClick on the link to download and install <a href="https://gforge.inria.fr/frs/?group_id=435">OpenMEEG</a>.');
+                end
+            end
+            
             tmpDir = tempdir;
             
             [~,rname] = fileparts(tempname);
@@ -651,8 +670,10 @@ classdef headModel < handle
             obj = headModel(inputParameters(:));
         end
         function obj = loadDefault()
-            template = which('head_modelColin27_5003_Standard-10-5-Cap339-Destrieux148.mat');
-            obj = headModel.loadFromFile(template);
+            obj = headModel.loadFromFile(headModel.getDefaultTemplateFilename());
+        end
+        function filename = getDefaultTemplateFilename()
+            filename = which('head_modelColin27_5003_Standard-10-5-Cap339-Destrieux148.mat');
         end
         
     end
