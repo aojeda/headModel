@@ -141,12 +141,13 @@ classdef headModel < handle
         function h = plotMontage(obj,showNewfig, ax)
             % Plots a figure with the xyz distribution of sensors, fiducial landmarks, and
             % coordinate axes.
-
+            
+            color = [0.93 0.96 1];
             if isempty(obj.channelSpace) || isempty(obj.labels);error('"channelSpace or "labels" are empty.');end
             if nargin < 2, showNewfig = true;end
-            if nargin < 3, ax = gca;end
-            color = [0.93 0.96 1];
             if showNewfig, figure('Color',color);end
+            if nargin < 3, ax = gca;end
+            
             h = scatter3(obj.channelSpace(:,1),obj.channelSpace(:,2),obj.channelSpace(:,3),'filled',...
                 'MarkerEdgeColor','k','MarkerFaceColor','y','parent',ax);
             hold(ax,'on');
