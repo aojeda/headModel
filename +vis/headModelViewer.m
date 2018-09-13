@@ -30,10 +30,10 @@ classdef headModelViewer < handle
             sensorsOn = imresize(imread([path filesep 'sensorsOn.png']),[20 20]);
             scalpOn = imread([path filesep 'scalpOn.png']);
             skullOn = imread([path filesep 'skullOn.png']);
-            cortexOn = imread([path filesep 'cortexOn.png']);
             atlasOn = imread([path filesep 'atlasOn.png']);
             roiModeOn  = imread([path filesep 'selectRoiOn.svg.png']);
             lrBrain = imresize(imread([path filesep 'LeftRightView.png']),[25 28]);
+            helpIcon = imresize(imread([path filesep 'Gnome-help-browser.svg.png']),[28 28]);
             
             if isempty(hmObj.leftH)
                 [hmObj.fvLeft,hmObj.fvRight, hmObj.leftH, hmObj.rightH] = geometricTools.splitBrainHemispheres(hmObj.cortex); 
@@ -68,6 +68,9 @@ classdef headModelViewer < handle
             
             hcb = uitoggletool(toolbarHandle,'CData',lrBrain,'Separator','off','HandleVisibility','off','TooltipString','View left/right hemisphere','State','off');
             set(hcb,'OnCallback',@(src,event)viewHemisphere(obj,hcb),'OffCallback',@(src, event)viewHemisphere(obj,hcb));
+            
+            uitoggletool(toolbarHandle,'CData',helpIcon,'Separator','on','HandleVisibility','off','TooltipString','Help','State','off',...
+                'onCallback','web(''https://github.com/aojeda/headModel#headmodel-toolbox-for-matlabeeglab'')','offCallback','web(''https://github.com/aojeda/headModel#headmodel-toolbox-for-matlabeeglab'')');
             
             obj.dcmHandle = datacursormode(obj.hFigure);
             obj.dcmHandle.SnapToDataVertex = 'off';

@@ -65,6 +65,7 @@ classdef currentSourceViewer < handle
             pause = imresize(imread([path filesep 'Gnome-media-playback-pause.svg.png']),[28 28 ]);
             rec = imresize(imread([path filesep 'Gnome-media-record.svg.png']),[28 28]);
             lrBrain = imresize(imread([path filesep 'LeftRightView.png']),[25 28]);
+            helpIcon = imresize(imread([path filesep 'Gnome-help-browser.svg.png']),[28 28]);
             
             J = double(J);
             V = double(V);
@@ -88,22 +89,25 @@ classdef currentSourceViewer < handle
             
             toolbarHandle = findall(obj.hFigure,'Type','uitoolbar');
             
-            hcb(1) = uitoggletool(toolbarHandle,'CData',labelsOn,'Separator','on','HandleVisibility','off','TooltipString','Labels On/Off','State','off');
-            set(hcb(1),'OnCallback',@(src,event)rePaint(obj,hcb(1),'labelsOn'),'OffCallback',@(src, event)rePaint(obj,hcb(1),'labelsOff'));
+            hcb = uitoggletool(toolbarHandle,'CData',labelsOn,'Separator','on','HandleVisibility','off','TooltipString','Labels On/Off','State','off');
+            set(hcb,'OnCallback',@(src,event)rePaint(obj,hcb,'labelsOn'),'OffCallback',@(src, event)rePaint(obj,hcb,'labelsOff'));
 
-            hcb(2) = uitoggletool(toolbarHandle,'CData',sensorsOn,'Separator','on','HandleVisibility','off','TooltipString','Sensors On/Off','State','off');
-            set(hcb(2),'OnCallback',@(src,event)rePaint(obj,hcb(2),'sensorsOn'),'OffCallback',@(src, event)rePaint(obj,hcb(2),'sensorsOn'));
+            hcb = uitoggletool(toolbarHandle,'CData',sensorsOn,'Separator','on','HandleVisibility','off','TooltipString','Sensors On/Off','State','off');
+            set(hcb,'OnCallback',@(src,event)rePaint(obj,hcb,'sensorsOn'),'OffCallback',@(src, event)rePaint(obj,hcb,'sensorsOff'));
 
-            hcb(3) = uitoggletool(toolbarHandle,'CData',vectorOn,'Separator','on','HandleVisibility','off','TooltipString','Vectors On/Off','State','off');
-            set(hcb(3),'OnCallback',@(src,event)rePaint(obj,hcb(3),'vectorOn'),'OffCallback',@(src, event)rePaint(obj,hcb(3),'vectorOff'));
+            hcb = uitoggletool(toolbarHandle,'CData',vectorOn,'Separator','on','HandleVisibility','off','TooltipString','Vectors On/Off','State','off');
+            set(hcb,'OnCallback',@(src,event)rePaint(obj,hcb,'vectorOn'),'OffCallback',@(src, event)rePaint(obj,hcb,'vectorOff'));
 
-            hcb(4) = uitoggletool(toolbarHandle,'CData',lrBrain,'Separator','on','HandleVisibility','off','TooltipString','View left/right hemisphere','State','off');
-            set(hcb(4),'OnCallback',@(src,event)viewHemisphere(obj,hcb(4)),'OffCallback',@(src, event)viewHemisphere(obj,hcb(4)));
+            hcb = uitoggletool(toolbarHandle,'CData',lrBrain,'Separator','on','HandleVisibility','off','TooltipString','View left/right hemisphere','State','off');
+            set(hcb,'OnCallback',@(src,event)viewHemisphere(obj,hcb),'OffCallback',@(src, event)viewHemisphere(obj,hcb));
 
             uipushtool(toolbarHandle,'CData',prev,'Separator','on','HandleVisibility','off','TooltipString','Previous','ClickedCallback',@obj.prev);
             uipushtool(toolbarHandle,'CData',next,'Separator','on','HandleVisibility','off','TooltipString','Next','ClickedCallback',@obj.next);
             uipushtool(toolbarHandle,'CData',play,'Separator','on','HandleVisibility','off','TooltipString','Play','ClickedCallback',@obj.play);
             uipushtool(toolbarHandle,'CData',rec,'Separator','on','HandleVisibility','off','TooltipString','Play','ClickedCallback',@obj.rec);
+            uitoggletool(toolbarHandle,'CData',helpIcon,'Separator','on','HandleVisibility','off','TooltipString','Help','State','off',...
+                'onCallback','web(''https://github.com/aojeda/headModel#headmodel-toolbox-for-matlabeeglab'')','offCallback','web(''https://github.com/aojeda/headModel#headmodel-toolbox-for-matlabeeglab'')');
+            
             set(obj.hFigure,'WindowScrollWheelFcn',@(src, event)mouseMove(obj,[], event));
             pn = uipanel(obj.hFigure);
             pn.Position = [0 0.0 1 0.1];
