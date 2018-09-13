@@ -25,7 +25,7 @@ classdef EEGBrowserX < vis.currentSourceViewer
             obj.EEG = EEG;
             obj.source = EEGSource(EEG);
             
-            obj.hFigure.Position(3) = 750;
+            obj.hFigure.Position(3) = 775;
             obj.hAxes.Position = [0.1300    0.4464    0.6435    0.5434];
             obj.hAxes2 = axes('Position',[0.0915    0.1718    0.8662    0.2510]);
             sd = 5*median(median(std(obj.EEG.data,[],2),3));
@@ -43,14 +43,18 @@ classdef EEGBrowserX < vis.currentSourceViewer
             obj.hTCursor = plot(obj.time(obj.timeCursor.Value)*[1 1],get(obj.hAxes2,'ylim'),'k-.','linewidth',0.5);
             hold(obj.hAxes2,'off');
             toolbarHandle = findall(obj.hFigure,'Type','uitoolbar');
+            delete(findall(obj.hFigure,'TooltipString','Help'))
             path = fileparts(which('headModel.m'));
             path = fullfile(path,'+vis','icons');
             prevTrial  = imresize(imread([path filesep 'Gnome-media-skip-backward.svg.png']),[28 28]);
             nextTrial  = imresize(imread([path filesep 'Gnome-media-skip-forward.svg.png']),[28 28]);
+            helpIcon = imresize(imread([path filesep 'Gnome-help-browser.svg.png']),[28 28]);
             uitoggletool(toolbarHandle,'CData',prevTrial,'Separator','on','HandleVisibility','off','TooltipString','Previous trial',...
                 'onCallback',@obj.prevTrial, 'offCallback',@obj.prevTrial);
             uitoggletool(toolbarHandle,'CData',nextTrial,'Separator','on','HandleVisibility','off','TooltipString','Next trial',...
                 'onCallback',@obj.nextTrial,'offCallback',@obj.nextTrial);
+            uitoggletool(toolbarHandle,'CData',helpIcon,'Separator','on','HandleVisibility','off','TooltipString','Help','State','off',...
+                'onCallback','web(''https://github.com/aojeda/headModel#headmodel-toolbox-for-matlabeeglab'')','offCallback','web(''https://github.com/aojeda/headModel#headmodel-toolbox-for-matlabeeglab'')');
             title(obj.hAxes2,['Trial: ' num2str(obj.trial) '/' num2str(obj.EEG.trials)]);
         end
         
