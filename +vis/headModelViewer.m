@@ -26,22 +26,14 @@ classdef headModelViewer < handle
             color = ones(1, 3); %[0.93 0.96 1];
             path = fileparts(which('headModel.m'));
             path = fullfile(path,'+vis','icons');
-            
-            labelsOn  = imread([path filesep 'labelsOn.png']);
-            labelsOff = imread([path filesep 'labelsOff.png']);
-            sensorsOn = imread([path filesep 'sensorsOn.png']);
-            sensorsOff = imread([path filesep 'sensorsOff.png']);
+            labelsOn  = imresize(imread([path filesep 'labelsOn.png']),[28 28]);
+            sensorsOn = imresize(imread([path filesep 'sensorsOn.png']),[20 20]);
             scalpOn = imread([path filesep 'scalpOn.png']);
-            scalpOff = imread([path filesep 'scalpOff.png']);
             skullOn = imread([path filesep 'skullOn.png']);
-            skullOff = imread([path filesep 'skullOff.png']);
             cortexOn = imread([path filesep 'cortexOn.png']);
-            cortexOff = imread([path filesep 'cortexOff.png']);
             atlasOn = imread([path filesep 'atlasOn.png']);
-            atlasOff = imread([path filesep 'atlasOff.png']);
             roiModeOn  = imread([path filesep 'selectRoiOn.svg.png']);
-            roiModeOff  = imread([path filesep 'selectRoiOff.svg.png']);
-            lrBrain = imread([path filesep 'lr_brain.png']);
+            lrBrain = imresize(imread([path filesep 'LeftRightView.png']),[25 28]);
             
             if isempty(hmObj.leftH)
                 [hmObj.fvLeft,hmObj.fvRight, hmObj.leftH, hmObj.rightH] = geometricTools.splitBrainHemispheres(hmObj.cortex); 
@@ -56,29 +48,26 @@ classdef headModelViewer < handle
             
             toolbarHandle = findall(obj.hFigure,'Type','uitoolbar');
             
-            hcb(1) = uitoggletool(toolbarHandle,'CData',labelsOn,'Separator','on','HandleVisibility','off','TooltipString','Labels On/Off','userData',{labelsOn,labelsOff},'State','on');
-            set(hcb(1),'OnCallback',@(src,event)rePaint(obj,hcb(1),'labelsOn'),'OffCallback',@(src, event)rePaint(obj,hcb(1),'labelsOff'));
+            hcb = uitoggletool(toolbarHandle,'CData',labelsOn,'Separator','on','HandleVisibility','off','TooltipString','Labels On/Off','State','off');
+            set(hcb,'OnCallback',@(src,event)rePaint(obj,hcb,'labelsOff'),'OffCallback',@(src, event)rePaint(obj,hcb,'labelsOn'));
             
-            hcb(2) = uitoggletool(toolbarHandle,'CData',sensorsOn,'Separator','off','HandleVisibility','off','TooltipString','Sensors On/Off','userData',{sensorsOn,sensorsOff},'State','on');
-            set(hcb(2),'OnCallback',@(src,event)rePaint(obj,hcb(2),'sensorsOn'),'OffCallback',@(src, event)rePaint(obj,hcb(2),'sensorsOff'));
+            hcb = uitoggletool(toolbarHandle,'CData',sensorsOn,'Separator','off','HandleVisibility','off','TooltipString','Sensors On/Off','State','off');
+            set(hcb,'OnCallback',@(src,event)rePaint(obj,hcb,'sensorsOff'),'OffCallback',@(src, event)rePaint(obj,hcb,'sensorsOn'));
             
-            hcb(3) = uitoggletool(toolbarHandle,'CData',scalpOn,'Separator','off','HandleVisibility','off','TooltipString','Scalp On/Off','userData',{scalpOn,scalpOff},'State','on');
-            set(hcb(3),'OnCallback',@(src,event)rePaint(obj,hcb(3),'scalpOn'),'OffCallback',@(src, event)rePaint(obj,hcb(3),'scalpOff'));
+            hcb = uitoggletool(toolbarHandle,'CData',scalpOn,'Separator','off','HandleVisibility','off','TooltipString','Scalp On/Off','State','off');
+            set(hcb,'OnCallback',@(src,event)rePaint(obj,hcb,'scalpOff'),'OffCallback',@(src, event)rePaint(obj,hcb,'scalpOn'));
             
-            hcb(4) = uitoggletool(toolbarHandle,'CData',skullOn,'Separator','off','HandleVisibility','off','TooltipString','Skull On/Off','userData',{skullOn,skullOff},'State','on');
-            set(hcb(4),'OnCallback',@(src,event)rePaint(obj,hcb(4),'skullOn'),'OffCallback',@(src, event)rePaint(obj,hcb(4),'skullOff'));
+            hcb = uitoggletool(toolbarHandle,'CData',skullOn,'Separator','off','HandleVisibility','off','TooltipString','Skull On/Off','State','off');
+            set(hcb,'OnCallback',@(src,event)rePaint(obj,hcb,'skullOff'),'OffCallback',@(src, event)rePaint(obj,hcb,'skullOn'));
             
-            hcb(5) = uitoggletool(toolbarHandle,'CData',cortexOn,'Separator','off','HandleVisibility','off','TooltipString','Cortex On/Off','userData',{cortexOn,cortexOff},'State','on');
-            set(hcb(5),'OnCallback',@(src,event)rePaint(obj,hcb(5),'cortexOn'),'OffCallback',@(src, event)rePaint(obj,hcb(5),'cortexOff'));
+            hcb = uitoggletool(toolbarHandle,'CData',atlasOn,'Separator','off','HandleVisibility','off','TooltipString','Atlas On/Off','State','off');
+            set(hcb,'OnCallback',@(src,event)rePaint(obj,hcb,'atlasOff'),'OffCallback',@(src, event)rePaint(obj,hcb,'atlasOn'));
             
-            hcb(6) = uitoggletool(toolbarHandle,'CData',atlasOn,'Separator','off','HandleVisibility','off','TooltipString','Atlas On/Off','userData',{atlasOn,atlasOff},'State','on');
-            set(hcb(6),'OnCallback',@(src,event)rePaint(obj,hcb(6),'atlasOn'),'OffCallback',@(src, event)rePaint(obj,hcb(6),'atlasOff'));
+            hcb = uitoggletool(toolbarHandle,'CData',roiModeOn,'Separator','off','HandleVisibility','off','TooltipString','ROI mode On/Off','State','off');
+            set(hcb,'OnCallback',@(src,event)rePaint(obj,hcb,'roiModeOn'),'OffCallback',@(src, event)rePaint(obj,hcb,'roiModeOff'));
             
-            hcb(7) = uitoggletool(toolbarHandle,'CData',roiModeOn,'Separator','on','HandleVisibility','off','TooltipString','ROI mode On/Off','userData',{roiModeOn,roiModeOff},'State','off');
-            set(hcb(7),'OnCallback',@(src,event)rePaint(obj,hcb(7),'roiModeOn'),'OffCallback',@(src, event)rePaint(obj,hcb(7),'roiModeOff'));
-            
-            hcb(8) = uitoggletool(toolbarHandle,'CData',lrBrain,'Separator','off','HandleVisibility','off','TooltipString','View left/right hemisphere','State','off');
-            set(hcb(8),'OnCallback',@(src,event)viewHemisphere(obj,hcb(8)),'OffCallback',@(src, event)viewHemisphere(obj,hcb(8)));
+            hcb = uitoggletool(toolbarHandle,'CData',lrBrain,'Separator','off','HandleVisibility','off','TooltipString','View left/right hemisphere','State','off');
+            set(hcb,'OnCallback',@(src,event)viewHemisphere(obj,hcb),'OffCallback',@(src, event)viewHemisphere(obj,hcb));
             
             obj.dcmHandle = datacursormode(obj.hFigure);
             obj.dcmHandle.SnapToDataVertex = 'off';
@@ -149,12 +138,6 @@ classdef headModelViewer < handle
         end
         %%
         function rePaint(obj,hObject,opt)
-            CData = get(hObject,'userData');
-            if isempty(strfind(opt,'Off'))
-                set(hObject,'CData',CData{2});
-            else
-                set(hObject,'CData',CData{1});
-            end
             switch opt
                 case 'labelsOn'
                     set(obj.hLabels,'Visible','on');
@@ -167,9 +150,9 @@ classdef headModelViewer < handle
                     set(obj.hSensors,'Visible','off');
                     set(obj.hFiducials,'Visible','off');
                 case 'scalpOn'
-                    set(obj.hScalp,'Visible','on');
+                    set(obj.hScalp,'FaceAlpha',0.45)
                 case 'scalpOff'
-                    set(obj.hScalp,'Visible','off');
+                    set(obj.hScalp,'FaceAlpha',0)
                 case 'skullOn'
                     set(obj.hSkull,'Visible','on');
                 case 'skullOff'
