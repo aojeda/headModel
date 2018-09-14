@@ -17,7 +17,7 @@ classdef EEGBrowserX < vis.currentSourceViewer
     end
     methods
         function obj = EEGBrowserX(EEG,figureTitle)
-            if nargin < 3, figureTitle = '';end
+            if nargin < 2, figureTitle = '';end
             J = EEG.etc.src.actFull(:,:,1);
             V = EEG.data(:,:,1);
             hm = headModel.loadFromFile(EEG.etc.src.hmfile);
@@ -40,8 +40,9 @@ classdef EEGBrowserX < vis.currentSourceViewer
             ylim(obj.hAxes2,[-ytick(end) ytick(1)+2*sd]);
             set(obj.hAxes2,'YTickLabel',fliplr({obj.EEG.chanlocs.labels}),'YTick',fliplr(ytick))
             hold(obj.hAxes2,'on');
-            obj.hTCursor = plot(obj.time(obj.timeCursor.Value)*[1 1],get(obj.hAxes2,'ylim'),'k-.','linewidth',0.5);
+            obj.hTCursor = plot(obj.hAxes2,obj.time(obj.timeCursor.Value)*[1 1],get(obj.hAxes2,'ylim'),'k-.','linewidth',0.5);
             hold(obj.hAxes2,'off');
+            drawnow;
             toolbarHandle = findall(obj.hFigure,'Type','uitoolbar');
             delete(findall(obj.hFigure,'TooltipString','Help'))
             path = fileparts(which('headModel.m'));
