@@ -16,12 +16,19 @@ classdef EEGBrowserX < vis.currentSourceViewer
         hEEG2
     end
     methods
-        function obj = EEGBrowserX(EEG,figureTitle)
+        function obj = EEGBrowserX(EEG, figureTitle, clim)
             if nargin < 2, figureTitle = '';end
+            if nargin < 3, clim = [];end
             J = EEG.etc.src.actFull(:,:,1);
             V = EEG.data(:,:,1);
             hm = headModel.loadFromFile(EEG.etc.src.hmfile);
             obj = obj@vis.currentSourceViewer(hm,J,V,figureTitle,false, EEG.srate, EEG.times);
+            if ~isempty(clim)
+                obj.clim.source = clim;
+                obj.clim.scalp = clim;
+                set(obj.hAxes,'Clim',obj.clim.source);
+                obj.colorBar.Ticks = linspace(obj.clim.source(1)*0.9,obj.clim.source(2)*0.9,3);
+            end
             obj.EEG = EEG;
             obj.source = EEGSource(EEG);
             
@@ -40,7 +47,9 @@ classdef EEGBrowserX < vis.currentSourceViewer
             ylim(obj.hAxes2,[-ytick(end) ytick(1)+2*sd]);
             set(obj.hAxes2,'YTickLabel',fliplr({obj.EEG.chanlocs.labels}),'YTick',fliplr(ytick))
             hold(obj.hAxes2,'on');
-            obj.hTCursor = plot(obj.hAxes2,obj.time(obj.timeCursor.Value)*[1 1],get(obj.hAxes2,'ylim'),'k-.','linewidth',0.5);
+            yl = get(obj.hAxes2,'ylim');
+            obj.hTCursor = plot(obj.hAxes2,obj.time(obj.timeCursor.Value)*[1 1],10*yl,'k-.','linewidth',0.5);
+            set(obj.hAxes2,'ylim',yl)
             hold(obj.hAxes2,'off');
             drawnow;
             toolbarHandle = findall(obj.hFigure,'Type','uitoolbar');

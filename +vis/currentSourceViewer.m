@@ -149,14 +149,27 @@ classdef currentSourceViewer < handle
             obj.hLabels = zeros(N,1);
             for it=1:N, obj.hLabels(it) = text('Position',k*obj.hmObj.channelSpace(it,:),'String',obj.hmObj.labels{it},'Parent',obj.hAxes);end
             set(obj.hLabels,'Visible','off');
-            obj.indz = obj.hmObj.scalp.vertices(:,3) < min(obj.hmObj.channelSpace(:,3)) - 0.1*abs(min(obj.hmObj.channelSpace(:,3)));
-
+            obj.indz = find(obj.hmObj.scalp.vertices(:,3) < min(obj.hmObj.channelSpace(:,3)) - 0.1*abs(min(obj.hmObj.channelSpace(:,3))));
+            
+            [~,neigDist] = geometricTools.kNearestNeighbor(obj.hmObj.channelSpace,obj.hmObj.channelSpace,3);
+            mdist = mean(neigDist(:));
+            
+            Ns = size(obj.hmObj.scalp.vertices,1);
+            %obj.indz = [];
+            for k=1:Ns
+                dk = sqrt(sum((ones(N,1)*obj.hmObj.scalp.vertices(k,:) - obj.hmObj.channelSpace).^2,2));
+                if all(dk>1.1*mdist)
+                    obj.indz(end+1) = k;
+                end
+            end
+            obj.indz = unique(obj.indz);
+            
             obj.setJ(J);
             obj.pointer = 1;
             obj.Nframes = num2str(size(obj.sourceMagnitud,2));
             obj.is3d = ndims(obj.sourceOrientation) > 2;
             
-            fprintf('Calibrating the source color scale... ')
+            fprintf('Calibrating the color scale...')
             mx = obj.getRobustLimits(obj.sourceMagnitud(:),0.5);
             obj.clim.source = [-mx mx];
             set(obj.hAxes,'Clim',obj.clim.source);
