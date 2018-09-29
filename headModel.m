@@ -188,11 +188,35 @@ classdef headModel < handle
         
         function coregister(obj,xyz,labels)
             [~,loc1,loc2] = intersect(labels,obj.labels,'stable');
-            if ~isempty(loc2) && length(loc2) > length(labels)*2/3
-                Aff = geometricTools.affineMapping(xyz(loc1,:),obj.channelSpace(loc2,:));
-                xyz = geometricTools.applyAffineMapping(xyz,Aff);
+            isCoreg = false;
+            if ~isempty(loc2)
+                % Before we move on with the automatic corregistration we need 
+                % to make sure that the target channels are well distributed on 
+                % the surface of the head (as oposed to all in one place)
+                if all([sum(unique(sign(obj.channelSpace(loc2,1)))) sum(unique(sign(obj.channelSpace(loc2,2))))] == [0 0])
+                    % Affine co-registration
+                    Aff = geometricTools.affineMapping(xyz(loc1,:),obj.channelSpace(loc2,:));
+                    xyz = geometricTools.applyAffineMapping(xyz,Aff);
+                    
+                    % Nonlinear co-registration
+                    [Def,spacing,offset] = geometricTools.bSplineMapping(xyz(loc1,:),obj.channelSpace(loc2,:),xyz);
+                    xyz = geometricTools.applyBSplineMapping(Def,spacing,offset,xyz);
+                    
+                    xyzScalpNei = geometricTools.kNearestNeighbor(xyz,obj.scalp.vertices,4);
+                    xyz_proj = mean(xyzScalpNei,3);
+                    
+                    [azimuth,elevation] = cart2sph(xyz(:,1),xyz(:,2),xyz(:,3));
+                    [~,~,r] = cart2sph(xyz_proj(:,1),xyz_proj(:,2),xyz_proj(:,3));
+                    [xyz(:,1),xyz(:,2),xyz(:,3)] = sph2cart(azimuth(:),elevation(:),1.01*r(:));
+                    isCoreg = true;
+                    obj.channelSpace = xyz;
+                    obj.labels = labels;
+                    obj.K = [];
+                end
             end
-            Coregister(obj,xyz, labels);
+            if ~isCoreg
+                Coregister(obj,xyz, labels);
+            end
             if isa(obj.labels,'MException')
             	ME = obj.labels;
                 ME.rethrow;

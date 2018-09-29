@@ -136,16 +136,15 @@ function Project_Callback(hObject, eventdata, handles)
 x = get(handles.sensors,'xdata');
 y = get(handles.sensors,'ydata');
 z = get(handles.sensors,'zdata');
-%xyz = geometricTools.nearestNeighbor([x(:) y(:) z(:)],handles.hm.scalp.vertices);
 xyz = geometricTools.kNearestNeighbor([x(:) y(:) z(:)],handles.hm.scalp.vertices);
 xyz = mean(xyz,3);
 [azimuth,elevation] = cart2sph(x,y,z);
 [~,~,r] = cart2sph(xyz(:,1),xyz(:,2),xyz(:,3));
-[x,y,z] = sph2cart(azimuth(:),elevation(:),r(:));
+[x,y,z] = sph2cart(azimuth(:),elevation(:),1.01*r(:));
 set(handles.sensors,'xdata',x);
 set(handles.sensors,'ydata',y);
 set(handles.sensors,'zdata',z);
-for it=1:length(handles.hLabels), 
+for it=1:length(handles.hLabels)
     set(handles.hLabels(it),'Position',1.1*[x(it) y(it) z(it)]);
 end
 

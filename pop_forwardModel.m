@@ -65,6 +65,9 @@ try
         end
     elseif ~exist(hmfile,'file') || recompute
         hm.coregister(xyz, labels);
+        if isempty(hm.K)
+            hm.computeLeadFieldBEM(conductivity,orientation);
+        end
     elseif exist(hmfile,'file')
         hm = headModel.loadFromFile(hmfile);
     end
