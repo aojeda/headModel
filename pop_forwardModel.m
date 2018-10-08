@@ -1,4 +1,4 @@
-function EEG = pop_forwardModel(EEG, templateFile, conductivity, orientation, recompute)
+function EEG = pop_forwardModel(EEG, templateFile, conductivity, orientation, recompute, manualCoreg)
 % Input arguments:
 %       conductivity: conductivity of each layer of tissue, scalp - skull - brain,
 %                     default: 0.33-0.022-0.33 S/m. See [2, 3, 4] for details.
@@ -16,6 +16,7 @@ end
 if nargin < 3, conductivity = [0.33 0.022 0.33];end
 if nargin < 4, orientation = true;end
 if nargin < 5, recompute = true;end
+if nargin < 6, manualCoreg = false;end
 
 hm = headModel.loadFromFile(templateFile);
 labels = {EEG.chanlocs.labels};
@@ -64,7 +65,7 @@ try
             hm.computeLeadFieldBEM(conductivity,orientation);
         end
     elseif ~exist(hmfile,'file') || recompute
-        hm.coregister(xyz, labels);
+        hm.coregister(xyz, labels, manualCoreg);
         if isempty(hm.K)
             hm.computeLeadFieldBEM(conductivity,orientation);
         end

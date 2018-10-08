@@ -186,7 +186,8 @@ classdef headModel < handle
         end
         %%
         
-        function coregister(obj,xyz,labels)
+        function coregister(obj,xyz,labels, manualCoreg)
+            if nargin < 4, manualCoreg = false;end
             [~,loc1,loc2] = intersect(labels,obj.labels,'stable');
             isCoreg = false;
             if ~isempty(loc2)
@@ -198,20 +199,22 @@ classdef headModel < handle
                     Aff = geometricTools.affineMapping(xyz(loc1,:),obj.channelSpace(loc2,:));
                     xyz = geometricTools.applyAffineMapping(xyz,Aff);
                     
-                    % Nonlinear co-registration
-                    [Def,spacing,offset] = geometricTools.bSplineMapping(xyz(loc1,:),obj.channelSpace(loc2,:),xyz);
-                    xyz = geometricTools.applyBSplineMapping(Def,spacing,offset,xyz);
-                    
-                    xyzScalpNei = geometricTools.kNearestNeighbor(xyz,obj.scalp.vertices,4);
-                    xyz_proj = mean(xyzScalpNei,3);
-                    
-                    [azimuth,elevation] = cart2sph(xyz(:,1),xyz(:,2),xyz(:,3));
-                    [~,~,r] = cart2sph(xyz_proj(:,1),xyz_proj(:,2),xyz_proj(:,3));
-                    [xyz(:,1),xyz(:,2),xyz(:,3)] = sph2cart(azimuth(:),elevation(:),1.01*r(:));
-                    isCoreg = true;
-                    obj.channelSpace = xyz;
-                    obj.labels = labels;
-                    obj.K = [];
+                    if ~manualCoreg
+                        % Nonlinear co-registration
+                        [Def,spacing,offset] = geometricTools.bSplineMapping(xyz(loc1,:),obj.channelSpace(loc2,:),xyz);
+                        xyz = geometricTools.applyBSplineMapping(Def,spacing,offset,xyz);
+                        
+                        xyzScalpNei = geometricTools.kNearestNeighbor(xyz,obj.scalp.vertices,4);
+                        xyz_proj = mean(xyzScalpNei,3);
+                        
+                        [azimuth,elevation] = cart2sph(xyz(:,1),xyz(:,2),xyz(:,3));
+                        [~,~,r] = cart2sph(xyz_proj(:,1),xyz_proj(:,2),xyz_proj(:,3));
+                        [xyz(:,1),xyz(:,2),xyz(:,3)] = sph2cart(azimuth(:),elevation(:),1.01*r(:));
+                        obj.channelSpace = xyz;
+                        obj.labels = labels;
+                        obj.K = [];
+                        isCoreg = true;
+                    end
                 end
             end
             if ~isCoreg
