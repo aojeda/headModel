@@ -31,6 +31,8 @@ Output:
 This function may or may not pop up a GUI depending on whether the co-registration process is needed. Learn more about co-registration [here](https://github.com/aojeda/headModel/blob/master/doc/coregistration.md).
 
 #### `pop_inverseSolution`
+**Note: ** This function has been moved to the [PEB](https://github.com/aojeda/PEB) repository, before using `pop_inverseSolution` you will need to add PEB to the path. 
+
 Use this function for performing the distributed source estimation of non-overlapping and consecutive segments of EEG data, trial by trial using the LORETA inverse method. We have validated this approach, in the context of BCI applications, in [this](https://www.ncbi.nlm.nih.gov/pubmed/26415149) paper. See more about LORETA in its official documentation page [here](http://www.uzh.ch/keyinst/loreta.htm).
 
 ```matlab
