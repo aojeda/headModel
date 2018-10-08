@@ -46,7 +46,7 @@ classdef LargeTensor < handle
                 if ischar(s.subs{k})
                     ind = [ind s.subs{k}];
                 else
-                    ind = [ind '[' num2str(s.subs{k}) ']'];
+                    ind = cat(2,ind,['[' num2str(s.subs{k}(:)') ']']);
                 end
                 if k<n
                     ind(end+1) = ',';
