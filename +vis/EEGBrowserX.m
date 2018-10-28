@@ -82,7 +82,7 @@ classdef EEGBrowserX < vis.currentSourceViewer
         function changeTrial(obj)
             obj.hFigure.Pointer = 'watch';
             drawnow
-            obj.setJ(obj.source.g(:,:,obj.trial))
+            obj.setJ(obj.source.get_source_trial(obj.trial))
             obj.setV(obj.EEG.data(:,:,obj.trial));
             for k=1:obj.EEG.nbchan
                 set(obj.hEEG(k),'YData',obj.EEG.data(k,:,obj.trial) + obj.hAxes2.YTick(obj.EEG.nbchan-k+1));
