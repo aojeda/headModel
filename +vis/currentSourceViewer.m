@@ -401,7 +401,7 @@ classdef currentSourceViewer < handle
             writeVideo(writer, frames(obj.pointer));
             while obj.pointer < n
                 obj.next();
-                title(obj.hAxes,[obj.figureName '  ' sprintf('%f sec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
+                title(obj.hAxes,[obj.figureName '  ' sprintf('%f msec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
                 frames(obj.pointer) = getframe(obj.hFigure);
                 writeVideo(writer, frames(obj.pointer));
                 pause(1/obj.fps);
