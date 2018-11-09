@@ -18,7 +18,6 @@ addpath(genpath(p));
 
 h = findobj(gcf, 'tag', 'tools');
 hmMenu = uimenu( h, 'label', 'headModel');
-uimenu( hmMenu, 'label', 'Surface-based (BEM) forward modeling','callback','EEG = pop_forwardModel(EEG);');
-uimenu( hmMenu, 'label', 'Inverse source estimation','callback','EEG = pop_inverseSolution(EEG);');
-uimenu( hmMenu, 'label', 'Move ROI source estimates to EEG.data','callback','try,EEG = moveSource2DataField(EEG);[ALLEEG EEG CURRENTSET]=eeg_store(ALLEEG, EEG);eeglab redraw;catch e, errordlg(e.message);end');
+uimenu( hmMenu, 'label', 'Compute BEM forward model','callback','EEG = pop_forwardModel(EEG);');
+uimenu( hmMenu, 'label', 'View head model','callback','hm=headModel.loadFromFile(EEG.etc.src.hmfile);hm.plot;');
 uimenu( hmMenu, 'label', 'Documentation','callback','web(''https://github.com/aojeda/headModel'')');
