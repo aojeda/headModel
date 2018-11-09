@@ -396,14 +396,13 @@ classdef currentSourceViewer < handle
             axHeight = obj.hAxes.Position(4);
             obj.hAxes.Position(4) = 0.8;
             title(obj.hAxes,[obj.figureName '  ' sprintf('%f msec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
-            frames(n) = struct('cdata',[],'colormap',[]);
-            frames(obj.pointer) = getframe(obj.hFigure);
-            writeVideo(writer, frames(obj.pointer));
+            frame = getframe(obj.hFigure);
+            writeVideo(writer, frame);
             while obj.pointer < n
                 obj.next();
                 title(obj.hAxes,[obj.figureName '  ' sprintf('%f msec  (%i',obj.time(obj.pointer),obj.pointer) '/' obj.Nframes ')']);
-                frames(obj.pointer) = getframe(obj.hFigure);
-                writeVideo(writer, frames(obj.pointer));
+                frame = getframe(obj.hFigure);
+                writeVideo(writer, frame);
                 pause(1/obj.fps);
             end
             close(writer);
