@@ -14,7 +14,7 @@ if nargin < 2
     templateFile = headModel.getDefaultTemplateFilename();
 end
 if nargin < 3, conductivity = [0.33 0.022 0.33];end
-if nargin < 4, orientation = true;end
+if nargin < 4, orientation = false;end
 if nargin < 5, recompute = true;end
 if nargin < 6, manualCoreg = false;end
 
