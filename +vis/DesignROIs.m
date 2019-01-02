@@ -26,21 +26,21 @@ set(fig.hFigure,'Name','Network Designer','NumberTitle','off','Tag','NetworkDesi
 
 
 axis(fig.hAxes,'tight');
-fig.hAxes.Position = [0.2284    0.2147    0.9199    0.7730];
+fig.hAxes.Position = [0.2865    0.2147    0.9199    0.7730];
 pn = uipanel(fig.hFigure, 'BorderType','none', 'Position',[0.0197    0.0577    0.4784    0.9358]);
  
-uicontrol(pn,'Style','tex','String','Face alpha','units','normalized','Position',[0.1689    0.0858    0.3724    0.0379]);
-uicontrol(pn,'Style','tex','String','ROI area','units','normalized','Position',[0.1698    0.1975    0.3855    0.0504]);
+uicontrol(pn,'Style','tex','String','Face alpha','units','normalized','Position',[0.08    0.0858    0.3724    0.0379]);
+uicontrol(pn,'Style','tex','String','ROI area','units','normalized','Position',[0.08    0.1975    0.3855    0.0504]);
 
 sl1 = uicontrol(pn,'Style', 'slider','Min',0,'Max',1,'Value',1,'Units','normalized',...
-    'Position',[0.0163    0.0330    0.7451    0.0401],'Value',1,'Callback',@setCortexAlpha,'TooltipString','Face alpha');
+    'Position',[0.0163    0.0330    0.5    0.0401],'Value',1,'Callback',@setCortexAlpha,'TooltipString','Face alpha');
 sl2 = uicontrol(pn,'Style', 'slider','Min',0,'Max',50,'Value',0,'Units','normalized',...
-    'Position',[0.0163    0.1584    0.7451    0.0401],'Value',0.5,'Callback',@updateSlider,...
+    'Position',[0.0163    0.1584    0.5    0.0401],'Value',0.5,'Callback',@updateSlider,...
     'TooltipString','ROI area','UserData',[],'tag','sliderArea');
 addlistener(sl1,'ContinuousValueChange',@setCortexAlpha);
 addlistener(sl2,'ContinuousValueChange',@updateSlider);
 
-uicontrol(pn,'Style','edit','units','normalized','Position',[0.7889    0.1605    0.1751    0.0412],'tag','editArea','callback',@updateEdit);
+uicontrol(pn,'Style','edit','units','normalized','Position',[0.5176    0.1605    0.0802    0.0412],'tag','editArea','callback',@updateEdit);
 
 fig.hCortexL.FaceVertexCData = repmat(skinColor,size(fig.hCortexL.FaceVertexCData,1),1);
 fig.hCortexR.FaceVertexCData = repmat(skinColor,size(fig.hCortexR.FaceVertexCData,1),1);
@@ -72,6 +72,27 @@ uicontrol(pn2,'Style','pushbutton','TooltipString','Paste from clipboard','CData
 uicontrol(pn2,'Style','pushbutton','TooltipString','Merge ROIs','CData',imgMerge,'callback',@merge,'units','normalized',          'Position',[0.08+1.1*4*btnSize(1)    0.0751    btnSize]);
 uicontrol(pn2,'Style','pushbutton','TooltipString','Save','CData',imgSave,'callback',@saveAs,'units','normalized',                'Position',[0.08+1.1*5*btnSize(1)    0.0751    btnSize]);
 uicontrol(pn2,'Style','pushbutton','TooltipString','Help','CData',imgHelp,'callback',@help,'units','normalized',                  'Position',[0.08+1.1*6*btnSize(1)    0.0751    btnSize]);
+
+bg = uibuttongroup(pn,'Title','Select atlas', 'SelectionChangedFcn',@selectAtlas,'Position',[0.6349    0.0277    0.3457    0.2179]);
+uicontrol(bg,'Style','radiobutton','String','Destrieux (148 ROI)','TooltipString','Select atlas','Position',[7    55   150    20]);
+uicontrol(bg,'Style','radiobutton','String','DK (68 ROI)','TooltipString','Select atlas','Position',[7    20   150    20]);
+end
+
+function selectAtlas(src, evnt)
+hmViewer = src.Parent.Parent.UserData;
+switch src.SelectedObject.String
+    case 'Destrieux (148 ROI)'
+        hmViewer.hmObj = headModel.loadFromFile(which('head_modelColin27_10003_Standard-10-5-Cap339-Destrieux148.mat'));
+    case 'DK (68 ROI)'
+        hmViewer.hmObj = headModel.loadFromFile(which('head_modelColin27_8003_Standard-10-5-Cap339.mat'));
+end
+hmObj = hmViewer.hmObj;
+hmObj.transform2MNI();
+if isempty(hmObj.leftH)
+    [hmObj.fvLeft,hmObj.fvRight, hmObj.leftH, hmObj.rightH] = geometricTools.splitBrainHemispheres(hmObj.cortex);
+end
+set(hmViewer.hCortexL,'vertices',hmObj.fvLeft.vertices,'faces',hmObj.fvLeft.faces,'FaceVertexCData',repmat([1,.75,.65],size(hmObj.fvLeft.vertices,1),1))
+set(hmViewer.hCortexR,'vertices',hmObj.fvRight.vertices,'faces',hmObj.fvRight.faces,'FaceVertexCData',repmat([1,.75,.65],size(hmObj.fvRight.vertices,1),1))
 end
 
 function selectAll(src, evnt)
@@ -90,20 +111,25 @@ end
 function paste(src, evnt)
 txt = deblank(clipboard('paste'));
 loc = strfind(txt,newline);
-%loc([end]) = [];
 roi = {};
 seed = [];
-for k=1:length(loc)
-    if k<length(loc)
-        tmp = str2num(deblank(txt(loc(k)+1:loc(k+1)-1)));
-    else
-        tmp = str2num(deblank(txt(loc(k)+1:end)));
+k = 1;
+while k < length(txt) 
+    loc(isempty(loc)) = length(txt);
+    tmp = deblank(txt(k:loc(1)-1));
+    if ~isempty(tmp)
+        if isempty(str2num(tmp))
+            roi{end+1,1} = tmp;
+        else
+            seed = [seed; str2num(tmp)];
+        end
     end
-    if isempty(tmp)
-        roi{end+1,1} = deblank(txt(loc(k)+1:loc(k+1)-1));
-    else
-        seed = [seed; tmp];
-    end
+    k = loc(1)+1;
+    loc(1) = [];
+end
+if isempty(seed)
+    errordlg('To copy from clipboard, the format needs to be a table of ROI name and seed values.');
+    return;
 end
 hTable = findobj(src.Parent.Parent,'tag','seeds');
 Data = get(hTable,'Data');
@@ -189,7 +215,7 @@ if any(cellfun(@isempty,net))
     return
 end
 uniqueNet = unique(net);
-color = parula(length(uniqueNet));
+color = flipud(parula(length(uniqueNet)));
 
 for k=1:size(seeds,1)
     ind = ismember(uniqueNet, net{k});
@@ -223,16 +249,15 @@ function removeROI(src, evnt)
 fig = src.Parent.Parent.UserData;
 hTable = findobj(src.Parent.Parent,'tag','seeds');
 Data = get(hTable,'Data');
-sel = cell2mat(Data(:,1));
-sel = find(sel & ~cellfun(@isempty,Data(:,2)));
-Data(sel,:) = [];
-for k=1:length(sel)
-    Data(end+k,:) = {false, [],[],[],[]};
+sel = false(size(Data,1),1);
+for k=1:size(Data,1)
+    if ~isempty(Data{k,1})
+        sel(k) = Data{k,1};
+    end
 end
+Data(sel,:) = [];
+Data(end+1:end+sum(sel),:) = repmat({[false], [],[],[],[]},sum(sel),1);
 set(hTable,'Data',Data);
-Indices = get(findobj(src.Parent.Parent, 'tag','seeds'),'UserData');
-Indices(sel) = [];
-set(findobj(src.Parent.Parent, 'tag','seeds'),'UserData', Indices);
 hSurf = findall(fig.hAxes,'tag','SeedSurf');
 if isempty(hSurf)
     return
@@ -254,7 +279,7 @@ function updateEdit(src, evnt)
 fig = src.Parent.Parent.UserData;
 val = str2double(src.String);
 set(findobj(fig.hFigure,'tag','sliderArea'),'Value',val);
-setArea(val);
+setArea();
 end
 
 
@@ -276,84 +301,59 @@ function setArea()
 fig = get(gcf,'UserData');
 hTable = findobj(fig.hFigure,'tag','seeds');
 Data = get(hTable,'Data');
-sel = cell2mat(Data(:,1));
-sel = find(sel & ~cellfun(@isempty,Data(:,2)));
-A = cell2mat(Data(:,5));
-set(hTable,'Data',Data);
-
-hSlider = findobj(fig.hFigure,'tag','sliderArea');
-seeds = hSlider.UserData;
-if isempty(seeds)
-    return;
-elseif length(seeds) ~= max(sel)
-    setSeeds(gco);
-    seeds = hSlider.UserData;
+sel = false(size(Data,1),1);
+for k=1:size(Data,1)
+    if ~isempty(Data{k,1})
+        sel(k) = Data{k,1};
+    end
 end
-
 hm = fig.hmObj;
-midline = seeds(:,1)==0;
-[~,~,midlineIndicesL] = geometricTools.nearestNeighbor(seeds(midline,:),hm.fvLeft.vertices);
-[~,~,midlineIndicesR] = geometricTools.nearestNeighbor(seeds(midline,:),hm.fvRight.vertices);
-[~,~,seedIndices] = geometricTools.nearestNeighbor(seeds(~midline,:),hm.cortex.vertices);
-A = [A(midline)/2; A(midline)/2; A(~midline)];
+hmDefault = headModel.loadDefault;
+ROIs = Data(sel,4);
+seeds = Data(sel,3);
+uniqueROIs = unique(ROIs,'stable');
+network = repmat(struct('name','','ROI',[],'mask',[]),length(uniqueROIs),1);
 
-seedIndices = [hm.leftH(midlineIndicesL);hm.rightH(midlineIndicesR);seedIndices];
-n = length(seedIndices);
-roiIndices = cell(n,1);
-for k=1:n
-    roiIndices{k} = seedIndices(k);
-end
-a = zeros(n,1);
-
-for k=1:n
-    while a(k)/100 < A(k)
-        IND = [];
-        for i=1:length(roiIndices{k})
-            ind_i = find(any(hm.cortex.faces == roiIndices{k}(i),2));
-            IND = [IND;ind_i];
+for k=1:length(uniqueROIs)
+    net_k = find(ismember(ROIs,uniqueROIs{k}));
+    network(k).name = uniqueROIs{k};
+    for r=1:length(net_k)
+        c_r = str2num(seeds{net_k(r),:});
+        if c_r(1)==0
+            [~,~,midlineIndL] = geometricTools.nearestNeighbor(c_r,hm.fvLeft.vertices,20);
+            [~,~,midlineIndR] = geometricTools.nearestNeighbor(c_r,hm.fvRight.vertices,20);
+            ind_c_r = [midlineIndL(:);midlineIndR(:)];
+        else
+            [~,~,ind_c_r] = geometricTools.nearestNeighbor(c_r,hm.cortex.vertices,20);
         end
-        roiIndices{k} = [roiIndices{k};  unique(hm.cortex.faces(IND,:))];
-        a(k) = geometricTools.getSurfaceArea(hm.cortex.vertices,hm.cortex.faces(roiIndices{k},:));
+        colorTable_nz = nonzeros(hm.atlas.colorTable(ind_c_r));
+        [counts, centers] = hist(colorTable_nz,length(ind_c_r));
+        [~,ind] = max(counts);
+        [~,ind] = min(colorTable_nz - centers(ind));
+        % ind = find(hm.atlas.colorTable(ind_c_r));
+        network(k).ROI{r} = hm.atlas.label{colorTable_nz(ind(1))};
     end
+    network(k).mask = any(hm.indices4Structure(network(k).ROI),2);
 end
-
-Indices = cell(size(seeds,1),1);
-if any(midline)
-    ind = [1:sum(midline)*2];
-    ind = reshape(ind,sum(midline),[])';
-    for k=1:size(ind,2)
-        Indices{k} = cell2mat(roiIndices(ind(:,k)));
-    end
-    Indices(k+1:end) = roiIndices(setdiff(1:n,ind));
-else
-    Indices =  roiIndices;
-end
-n = length(Indices);
-indNoGM = find(hm.atlas.colorTable==0);
-for k=1:n
-    [~,loc1] = intersect(Indices{k},indNoGM);
-    Indices{k}(loc1) = [];
-end
-IndicesNew = get(findobj(fig.hFigure, 'tag','seeds'),'UserData');
-if isempty(IndicesNew), IndicesNew = Indices;end
-IndicesNew(sel) = Indices(sel);
-drawAreas(fig, IndicesNew);
-set(findobj(fig.hFigure, 'tag','seeds'),'UserData',IndicesNew);
+fig.hAxes.UserData = network;
+drawAreas(fig, network);
 end
 
 
-function drawAreas(fig, Indices)
+function drawAreas(fig, network)
 skinColor = [1,.75,.65];
 hm = fig.hmObj;
 color = repmat(skinColor,size(hm.cortex.vertices,1),1);
 fig.hCortexL.FaceVertexCData = color(hm.leftH,:);
 fig.hCortexR.FaceVertexCData = color(hm.rightH,:);
-hSurf = flipud(findall(fig.hFigure,'tag','SeedSurf'));
-for k=1:length(Indices)
-    color(Indices{k},:) = ones(length(Indices{k}),1)*hSurf(k).FaceColor;
+c = flipud(parula(length(network)));
+for k=1:length(network)
+    ind = find(any(hm.indices4Structure(network(k).ROI),2));
+    color(ind,:) = ones(length(ind),1)*c(k,:);
 end
 fig.hCortexL.FaceVertexCData = color(hm.leftH,:);
 fig.hCortexR.FaceVertexCData = color(hm.rightH,:);
+
 end
 
 
