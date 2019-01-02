@@ -121,7 +121,7 @@ while k < length(txt)
         if isempty(str2num(tmp))
             roi{end+1,1} = tmp;
         else
-            seed = [seed; str2num(tmp)];
+            seed = [seed; str2num(deblank(txt(k:loc(1))))];
         end
     end
     k = loc(1)+1;
@@ -214,7 +214,7 @@ if any(cellfun(@isempty,net))
     errordlg('The column Network needs to be specified!');
     return
 end
-uniqueNet = unique(net);
+uniqueNet = unique(net, 'stable');
 color = flipud(parula(length(uniqueNet)));
 
 for k=1:size(seeds,1)
@@ -315,18 +315,30 @@ uniqueROIs = unique(ROIs,'stable');
 network = repmat(struct('name','','ROI',[],'mask',[]),length(uniqueROIs),1);
 
 for k=1:length(uniqueROIs)
+    nNeighbor = 5;
     net_k = find(ismember(ROIs,uniqueROIs{k}));
     network(k).name = uniqueROIs{k};
     for r=1:length(net_k)
         c_r = str2num(seeds{net_k(r),:});
         if c_r(1)==0
-            [~,~,midlineIndL] = geometricTools.nearestNeighbor(c_r,hm.fvLeft.vertices,20);
-            [~,~,midlineIndR] = geometricTools.nearestNeighbor(c_r,hm.fvRight.vertices,20);
+            [~,~,midlineIndL] = geometricTools.nearestNeighbor(c_r,hm.fvLeft.vertices,nNeighbor);
+            [~,~,midlineIndR] = geometricTools.nearestNeighbor(c_r,hm.fvRight.vertices,nNeighbor);
             ind_c_r = [midlineIndL(:);midlineIndR(:)];
         else
-            [~,~,ind_c_r] = geometricTools.nearestNeighbor(c_r,hm.cortex.vertices,20);
+            [~,~,ind_c_r] = geometricTools.nearestNeighbor(c_r,hm.cortex.vertices,nNeighbor);
         end
         colorTable_nz = nonzeros(hm.atlas.colorTable(ind_c_r));
+        if isempty(colorTable_nz)
+            if c_r(1)==0
+                [~,~,midlineIndL] = geometricTools.nearestNeighbor(c_r,hm.fvLeft.vertices,20);
+                [~,~,midlineIndR] = geometricTools.nearestNeighbor(c_r,hm.fvRight.vertices,20);
+                ind_c_r = [midlineIndL(:);midlineIndR(:)];
+            else
+                [~,~,ind_c_r] = geometricTools.nearestNeighbor(c_r,hm.cortex.vertices,20);
+            end
+            colorTable_nz = nonzeros(hm.atlas.colorTable(ind_c_r));
+        end
+        
         [counts, centers] = hist(colorTable_nz,length(ind_c_r));
         [~,ind] = max(counts);
         [~,ind] = min(colorTable_nz - centers(ind));
