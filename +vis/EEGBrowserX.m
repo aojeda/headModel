@@ -14,6 +14,7 @@ classdef EEGBrowserX < vis.currentSourceViewer
     properties(GetAccess=private,Hidden)
         hEEG;
         hEEG2
+        scale = 1;
     end
     methods
         function obj = EEGBrowserX(EEG, figureTitle, clim)
@@ -33,11 +34,15 @@ classdef EEGBrowserX < vis.currentSourceViewer
             obj.source = EEGSource(EEG);
             
             obj.hFigure.Position(3) = 775;
+            rotate3d(obj.hAxes,'off');
+            set(obj.hFigure,'KeyPressFcn',@onKeyPress);
+            obj.hFigure.UserData = obj;
+            rotate3d(obj.hAxes,'on');
             obj.hAxes.Position = [0.1300    0.4464    0.6435    0.5434];
             obj.hAxes2 = axes('Position',[0.0915    0.1718    0.8662    0.2510]);
             sd = 5*median(median(std(obj.EEG.data,[],2),3));
             ytick = (obj.EEG.nbchan:-1:1)*sd;
-            V = obj.EEG.data(:,:,obj.trial) + ytick'*ones(1,obj.EEG.pnts);
+            V = obj.scale*obj.EEG.data(:,:,obj.trial) + ytick'*ones(1,obj.EEG.pnts);
             obj.hEEG = plot(obj.hAxes2,EEG.times, V');
             % obj.hEEG = flipud(obj.hEEG);
             grid(obj.hAxes2,'on');
@@ -85,7 +90,7 @@ classdef EEGBrowserX < vis.currentSourceViewer
             obj.setJ(obj.source.get_source_trial(obj.trial))
             obj.setV(obj.EEG.data(:,:,obj.trial));
             for k=1:obj.EEG.nbchan
-                set(obj.hEEG(k),'YData',obj.EEG.data(k,:,obj.trial) + obj.hAxes2.YTick(obj.EEG.nbchan-k+1));
+                set(obj.hEEG(k),'YData',obj.scale*obj.EEG.data(k,:,obj.trial) + obj.hAxes2.YTick(obj.EEG.nbchan-k+1));
             end
             obj.plot();
             title(obj.hAxes2,['Trial: ' num2str(obj.trial) '/' num2str(obj.EEG.trials)]);
@@ -99,4 +104,18 @@ classdef EEGBrowserX < vis.currentSourceViewer
         end
         
     end
+end
+
+function onKeyPress(src,evnt)
+obj = src.UserData;
+switch evnt.Key
+    case 'subtract'
+        obj.scale = obj.scale/2;
+    case 'add'
+        obj.scale = obj.scale*2;
+end
+for k=1:obj.EEG.nbchan
+    set(obj.hEEG(k),'YData',obj.scale*obj.EEG.data(k,:,obj.trial) + obj.hAxes2.YTick(obj.EEG.nbchan-k+1));
+end
+
 end
