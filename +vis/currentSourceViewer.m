@@ -56,16 +56,16 @@ classdef currentSourceViewer < handle
             color = ones(1,3);
             path = fileparts(which('headModel.m'));
             path = fullfile(path,'+vis','icons');
-            labelsOn  = imresize(imread([path filesep 'labelsOn.png']),[28 28]);
-            sensorsOn = imresize(imread([path filesep 'sensorsOn.png']),[20 20]);
+            labelsOn  = imread([path filesep 'labelsOn.png']);
+            sensorsOn = imread([path filesep 'sensorsOn.png']);%,[20 20])
             vectorOn = imread([path filesep 'vectorOn.png']);
-            prev = imresize(imread([path filesep 'Gnome-media-seek-backward.svg.png']),[28 28]);
-            next = imresize(imread([path filesep 'Gnome-media-seek-forward.svg.png']),[28 28]);
-            play = imresize(imread([path filesep 'Gnome-media-playback-start.svg.png']),[28 28]);
-            pause = imresize(imread([path filesep 'Gnome-media-playback-pause.svg.png']),[28 28 ]);
-            rec = imresize(imread([path filesep 'Gnome-media-record.svg.png']),[28 28]);
-            lrBrain = imresize(imread([path filesep 'LeftRightView.png']),[25 28]);
-            helpIcon = imresize(imread([path filesep 'Gnome-help-browser.svg.png']),[28 28]);
+            prev = imread([path filesep 'Gnome-media-seek-backward.svg.png']);
+            next = imread([path filesep 'Gnome-media-seek-forward.svg.png']);
+            play = imread([path filesep 'Gnome-media-playback-start.svg.png']);
+            pause = imread([path filesep 'Gnome-media-playback-pause.svg.png']);
+            rec = imread([path filesep 'Gnome-media-record.svg.png']);
+            lrBrain = imread([path filesep 'LeftRightView.png']);
+            helpIcon = imread([path filesep 'Gnome-help-browser.svg.png']);
             
             J = double(J);
             V = double(V);
