@@ -42,7 +42,11 @@ classdef headModelViewer < handle
             obj.rightH = hmObj.rightH;
             obj.hFigure = figure('Menubar','figure','ToolBar','figure','renderer','opengl','Visible','on','Color',color,'Name','Head model');
             position = get(obj.hFigure,'position');
-            set(obj.hFigure,'position',[position(1:2) 648 490]);
+            if ispc
+                set(obj.hFigure,'position',[position(1:2).*[1 0.75] 648 490]);
+            else
+                set(obj.hFigure,'position',[position(1:2) 648 490]);
+            end
 
             obj.hAxes = axes('Parent',obj.hFigure);
             
