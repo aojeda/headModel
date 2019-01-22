@@ -701,7 +701,8 @@ classdef headModel < handle
             obj = headModel.loadFromFile(headModel.getDefaultTemplateFilename());
         end
         function filename = getDefaultTemplateFilename()
-            filename = which('head_modelColin27_5003_Standard-10-5-Cap339-Destrieux148.mat');
+            filename = which('head_modelColin27_8003_Standard-10-5-Cap339.mat');
+            % filename = which('head_modelColin27_5003_Standard-10-5-Cap339-Destrieux148.mat');
         end
         
     end
