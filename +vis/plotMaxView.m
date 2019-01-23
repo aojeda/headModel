@@ -1,5 +1,5 @@
 function plotMaxView(hm, x)
-r = 150;
+r = 100;
 
 dx = 1*[min(hm.cortex.vertices(:,1)) max(hm.cortex.vertices(:,1))];
 dy = 1*[min(hm.cortex.vertices(:,2)) max(hm.cortex.vertices(:,2))];
